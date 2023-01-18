@@ -15,6 +15,7 @@ def get_pitch(freq):
 
 def main_note(input):
     rate, y = input
+    print(len(y))
     if len(y.shape) == 2:
         y = y.T[0]
     N = len(y)
@@ -34,7 +35,6 @@ def main_note(input):
             volume_per_pitch[pitch] = 0
         volume_per_pitch[pitch] += 1.0 * volume / total_volume
     volume_per_pitch = {k: float(v) for k, v in volume_per_pitch.items()}
-    print(volume_per_pitch)
     # returns dict (str, float)
     return volume_per_pitch
 
