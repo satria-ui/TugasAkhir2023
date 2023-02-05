@@ -4,6 +4,7 @@ import numpy as np
 from scipy.fftpack import fft
 import gradio as gr
 from datetime import date
+import markdown
 
 def get_pitch(freq):
     A4 = 440
@@ -40,8 +41,11 @@ def main_note(input):
 
 def main():
     today = date.today()
-    desc = today.strftime("%B %d, %Y")
-
+    tgl = today.strftime("%B %d, %Y")
+    desc = (
+        f"<p id='Name'>by Adam Satria</p><br><p>{tgl}</p>"
+        )
+    
     gr.Interface(
     main_note,
     inputs = [
@@ -59,6 +63,7 @@ def main():
     allow_flagging = "never",
     css = (
         "p{color: gray; text-align: center; font-size: 	1.2500em;}"
+        "#Name{color: lightgrey; text-align: center; font-size: 1.875em; margin-bottom: 0px;}"
         "footer{visibility: hidden;}"
     )
     ).launch(share=True)

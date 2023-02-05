@@ -3,10 +3,12 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import librosa
 import numpy as np
+from IPython.display import Audio
 import librosa.display
+import random
 
 class data_loader:
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.path = path
     def getData(self):
         audio_path = []
@@ -37,29 +39,32 @@ class data_loader:
         return dataset
 
 class figures:
-    def waveplot(data,sr,emotion):
+    def __init__(self, path: str, emotion: str):
+        self.dataset = data_loader(path).getData()
+        self.path = list(self.dataset["Path"][self.dataset["Emotions"] == emotion])
+        self.idx = random.randint(0, len(path))
+        self.emotion = emotion
+        self.data, self.sampling_rate = librosa.load(self.path[self.idx])
+        
+    def waveplot(self):
         plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
-        librosa.display.waveshow(data,sr=sr,color='pink')
-        plt.show()
+        plt.title(self.emotion, size=14)
+        librosa.display.waveshow(self.data,sr=self.sampling_rate,color='pink')
+        return plt.show()
+    
+    def getAudio(self):
+        print(f"This is a recording of {self.path[self.idx]} from {self.idx} index of {self.emotion} dataset")
+        return Audio(self.path[self.idx])
 
-    def spectogram_linear(data,sr,emotion):
-        x = librosa.stft(data)
+    def spectogram(self, display="hz"):
+        x = librosa.stft(self.data)
         # convert to db
         xdb = librosa.amplitude_to_db(abs(x))
         plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
-        librosa.display.specshow(xdb,sr=sr, x_axis='time', y_axis='hz')
-        plt.colorbar(format="%+2.f dB")
-
-    def spectogram_log(data,sr,emotion):
-        x = librosa.stft(data)
-        # convert to db
-        xdb = librosa.amplitude_to_db(abs(x))
-        plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
-        librosa.display.specshow(xdb,sr=sr, x_axis='time', y_axis='log')
-        plt.colorbar(format="%+2.f dB")
+        plt.title(self.emotion, size=14)
+        librosa.display.specshow(xdb,sr=self.sampling_rate, x_axis='time', y_axis=display)
+        
+        return plt.colorbar(format="%+2.f dB")
 
 class audio_extraction:
     def __init__(self, file):
