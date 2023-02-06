@@ -31,7 +31,7 @@ def main():
 
     print("Creating Scaler...")
     scaler = StandardScaler().fit(X)
-    dump(scaler, './Scaler/Z-ScoreScaler.joblib')
+    dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
