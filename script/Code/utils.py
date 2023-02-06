@@ -1,23 +1,50 @@
 from os import listdir
+import os
 import pandas as pd
+import pickle
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import StandardScaler
 import librosa
 import numpy as np
 from IPython.display import Audio
 import librosa.display
 import random
+from joblib import load
 
 class data_loader:
     def __init__(self, path: str):
         self.path = path
     def getData(self):
-        audio_path = []
-        audio_emotion = []
-        directory_path = listdir(self.path)
+        if os.path.isdir(self.path):
+            audio_path = []
+            audio_emotion = []
+            directory_path = listdir(self.path)
 
-        for audio in directory_path:
-            audio_path.append(self.path+audio)
-            emotion = audio.split("_")
+            for audio in directory_path:
+                audio_path.append(self.path+audio)
+                emotion = audio.split("_")
+
+                if emotion[2] == "ANG":
+                    audio_emotion.append("angry")
+                elif emotion[2] == "FEA":
+                    audio_emotion.append("fear")
+                elif emotion[2] == "DIS":
+                    audio_emotion.append("disgust")
+                elif emotion[2] == "HAP":
+                    audio_emotion.append("happy")
+                elif emotion[2] == "NEU":
+                    audio_emotion.append("neutral")
+                elif emotion[2] == "SAD":
+                    audio_emotion.append("sad")
+
+            emotion_dataset = pd.DataFrame(audio_emotion, columns=['Emotions'])
+            audio_path_dataset = pd.DataFrame(audio_path, columns=['Path'])
+            dataset = pd.concat([audio_path_dataset, emotion_dataset], axis= 1)
+            return dataset
+        elif os.path.isfile(self.path):
+            audio_emotion = []
+            audio_path = [self.path]
+            emotion = self.path.split("_")
 
             if emotion[2] == "ANG":
                 audio_emotion.append("angry")
@@ -32,11 +59,12 @@ class data_loader:
             elif emotion[2] == "SAD":
                 audio_emotion.append("sad")
 
-        emotion_dataset = pd.DataFrame(audio_emotion, columns=['Emotions'])
-        audio_path_dataset = pd.DataFrame(audio_path, columns=['Path'])
-        dataset = pd.concat([audio_path_dataset, emotion_dataset], axis= 1)
-
-        return dataset
+            emotion_dataset = pd.DataFrame(audio_emotion, columns=['Emotions'])
+            audio_path_dataset = pd.DataFrame(audio_path, columns=['Path'])
+            dataset = pd.concat([audio_path_dataset, emotion_dataset], axis= 1)
+            return dataset
+        else:
+            return("Wrong Path File")
 
 class figures:
     def __init__(self, path: str, emotion: str):
@@ -88,3 +116,39 @@ class audio_extraction:
         extracted_audio = pd.DataFrame(X)
         extracted_audio["Emotions"] = y
         return extracted_audio
+
+class load_model:
+    def __init__(self, audio:str, model:str):
+        self.model = model
+        self.audio = audio
+
+    def reverse_label_encoder(data):
+        mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+        reverse_mapping_dict = {v: k for k, v in mapping.items()}
+
+        decoded_data = np.array([reverse_mapping_dict[i] for i in data])
+
+        return decoded_data
+
+    def getModelPrediction(self):
+        try:
+            loaded_model = pickle.load(open(f"./ML_Model/{self.model}", 'rb'))
+            if not os.path.isfile(self.audio):
+                raise ValueError("Wrong Audio Path")
+            else:
+                pass
+
+        except (ValueError, FileNotFoundError) as e:
+            return e
+
+        dataset = audio_extraction(self.audio).extract_audio()
+        X = dataset.drop(labels='Emotions', axis= 1)
+        scaler = load('./Scaler/Z-ScoreScaler.joblib')
+        x_scaled = scaler.transform(X)
+        x_test = pd.DataFrame(x_scaled)
+
+        prediction = loaded_model.predict(x_test)
+        prediction = load_model.reverse_label_encoder(prediction)
+        return prediction
+
+
