@@ -5,6 +5,16 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn import svm
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
+from joblib import dump
+
+def manual_label_encoder(data):
+    mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+    if type(data) == pd.core.series.Series:
+        encoded_data = data.map(mapping)
+    else:
+        encoded_data = [mapping[i] for i in data]
+
+    return encoded_data
 
 def main():
     path = "../dataset/"
@@ -12,20 +22,21 @@ def main():
     dataset = audio_extraction(path = path).extract_audio()
     print("Done")
 
-    label_encoder = LabelEncoder()
-    dataset['Emotions'] = label_encoder.fit_transform(dataset['Emotions'])
-    le_name_mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
-    print("Label Mapping:\n")
-    print(le_name_mapping)
+    dataset['Emotions'] = manual_label_encoder(dataset['Emotions'])
 
     X = dataset.drop(labels='Emotions', axis= 1)
     Y = dataset['Emotions']
 
+    print("Creating Scaler...")
+    scaler = StandardScaler().fit(X)
+    dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
+    print(f"Mean: {scaler.mean_}\n")
+    print(f"Scale: {scaler.scale_}")
+
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=123)
 
-    scaler = StandardScaler()
-    x_train = scaler.fit_transform(X_train)
-    x_test = scaler.transform(X_test)
+    x_train_scaled = scaler.transform(X_train)
+    x_test_scaled = scaler.transform(X_test)
 
     # GridSearching
     param_grid = {'C': [0.1,1,10], 'gamma': [1,0.1,0.01,0.001,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
@@ -38,22 +49,22 @@ def main():
     print("\n The best score across ALL searched params:\n",grid.best_score_)
     print("\n The best parameters across ALL searched params:\n",grid.best_params_)
 
-    # print("Training...")
-    # SVM_model = svm.SVC(kernel='linear')
-    # SVM_model.fit(x_train, y_train)
-    # print("Saving Model...")
-    # filename = '../ML_Model/SVM_Model.sav'
-    # pickle.dump(SVM_model, open(filename, 'wb'))
-    # print("Done.")
+    print("Training...")
+    SVM_model = svm.SVC(kernel='linear')
+    SVM_model.fit(x_train_scaled, y_train)
+    print("Saving Model...")
+    filename = '../ML_Model/svm_model.sav'
+    pickle.dump(SVM_model, open(filename, 'wb'))
+    print("Done.")
 
-    # y_pred=SVM_model.predict(x_test)
+    y_pred=SVM_model.predict(x_test_scaled)
 
     # report=classification_report(y_test, y_pred)
     # accuracy=accuracy_score(y_true=y_test, y_pred=y_pred)
 
-    # print("Model Summary:\n")
-    # print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
-    # print(report)
+    print("\nModel Summary:\n")
+    print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
+    print(report)
 
     # print("The Model's Prediction ")
     # print("<<<===========================================>>>")

@@ -4,7 +4,6 @@ import numpy as np
 from scipy.fftpack import fft
 import gradio as gr
 from datetime import date
-import markdown
 
 def get_pitch(freq):
     A4 = 440
@@ -45,7 +44,7 @@ def main():
     desc = (
         f"<p id='Name'>by Adam Satria</p><br><p>{tgl}</p>"
         )
-    
+
     gr.Interface(
     main_note,
     inputs = [
