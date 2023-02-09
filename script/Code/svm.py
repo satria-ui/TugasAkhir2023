@@ -3,6 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn import svm
+import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
 from joblib import dump
@@ -39,18 +40,27 @@ def main():
     x_test_scaled = scaler.transform(X_test)
 
     # GridSearching
-    param_grid = {'C': [0.1,1,10], 'gamma': [1,0.1,0.01,0.001,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
+    # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
+    # param_grid = {'C': [0.1,1,10], 'gamma': [1,0.1,0.01,0.001,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
 
-    grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
-    grid.fit(x_train,y_train)
+    # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
+    # grid.fit(x_train_scaled,y_train)
     
-    print(" Results from Grid Search " )
-    print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
-    print("\n The best score across ALL searched params:\n",grid.best_score_)
-    print("\n The best parameters across ALL searched params:\n",grid.best_params_)
+    # print(" Results from Grid Search " )
+    # print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
+    # print("\n The best score across ALL searched params:\n",grid.best_score_)
+    # print("\n The best parameters across ALL searched params:\n",grid.best_params_)
 
+    # grid_predictions = grid.predict(x_test_scaled)
+    # print(classification_report(y_test, grid_predictions))
+    
+    # print("The Model's Prediction ")
+    # print("<<<===========================================>>>")
+    # df = pd.DataFrame({'Actual': y_test, 'Predict': grid_predictions})
+    # print(df.head(10))
+    
     print("Training...")
-    SVM_model = svm.SVC(kernel='linear')
+    SVM_model = svm.SVC(C=10, gamma=0.01, kernel='rbf', probability=True)
     SVM_model.fit(x_train_scaled, y_train)
     print("Saving Model...")
     filename = '../ML_Model/svm_model.sav'
@@ -59,17 +69,17 @@ def main():
 
     y_pred=SVM_model.predict(x_test_scaled)
 
-    # report=classification_report(y_test, y_pred)
-    # accuracy=accuracy_score(y_true=y_test, y_pred=y_pred)
+    report=classification_report(y_test, y_pred)
+    accuracy=accuracy_score(y_true=y_test, y_pred=y_pred)
 
     print("\nModel Summary:\n")
     print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
     print(report)
 
-    # print("The Model's Prediction ")
-    # print("<<<===========================================>>>")
-    # df = pd.DataFrame({'Actual': y_test, 'Predict': y_pred})
-    # print(df.head(10))
+    print("The Model's Prediction ")
+    print("<<<===========================================>>>")
+    df = pd.DataFrame({'Actual': y_test, 'Predict': y_pred})
+    print(df.head(10))
 
 if __name__ == '__main__':
     main()
