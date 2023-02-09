@@ -9,7 +9,8 @@ import numpy as np
 from IPython.display import Audio
 import librosa.display
 import random
-from joblib import load
+import joblib
+# from joblib import load
 
 class data_loader:
     def __init__(self, path: str):
@@ -125,10 +126,13 @@ class load_model:
     def reverse_label_encoder(data):
         mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
         reverse_mapping_dict = {v: k for k, v in mapping.items()}
+        keys = list(reverse_mapping_dict.values())
 
-        decoded_data = np.array([reverse_mapping_dict[i] for i in data])
+        # decoded_data = np.array([reverse_mapping_dict[i] for i in data])
 
-        return decoded_data
+        result = {f'{keys[i]}': data[0, i] for i in range(len(keys))}
+
+        return result
 
     def getModelPrediction(self):
         try:
@@ -143,11 +147,11 @@ class load_model:
 
         dataset = audio_extraction(self.audio).extract_audio()
         X = dataset.drop(labels='Emotions', axis= 1)
-        scaler = load('./Scaler/Z-ScoreScaler.joblib')
+        scaler = joblib.load('./Scaler/Z-ScoreScaler.joblib')
         x_scaled = scaler.transform(X)
         x_test = pd.DataFrame(x_scaled)
 
-        prediction = loaded_model.predict(x_test)
+        prediction = loaded_model.predict_proba(x_test)
         prediction = load_model.reverse_label_encoder(prediction)
         return prediction
 

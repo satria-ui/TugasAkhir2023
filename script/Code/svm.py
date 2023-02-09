@@ -6,7 +6,7 @@ from sklearn import svm
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
-from joblib import dump
+import joblib
 
 def manual_label_encoder(data):
     mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
@@ -30,7 +30,7 @@ def main():
 
     print("Creating Scaler...")
     scaler = StandardScaler().fit(X)
-    dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
+    joblib.dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
@@ -45,7 +45,7 @@ def main():
 
     # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
     # grid.fit(x_train_scaled,y_train)
-    
+
     # print(" Results from Grid Search " )
     # print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
     # print("\n The best score across ALL searched params:\n",grid.best_score_)
@@ -53,12 +53,12 @@ def main():
 
     # grid_predictions = grid.predict(x_test_scaled)
     # print(classification_report(y_test, grid_predictions))
-    
+
     # print("The Model's Prediction ")
     # print("<<<===========================================>>>")
     # df = pd.DataFrame({'Actual': y_test, 'Predict': grid_predictions})
     # print(df.head(10))
-    
+
     print("Training...")
     SVM_model = svm.SVC(C=10, gamma=0.01, kernel='rbf', probability=True)
     SVM_model.fit(x_train_scaled, y_train)
