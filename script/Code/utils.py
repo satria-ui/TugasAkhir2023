@@ -7,18 +7,19 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import librosa
 import numpy as np
-from IPython.display import Audio
+from IPython.display import Audio, display
 import librosa.display
 import random
 import torchaudio
 import torch
 import joblib
 
-class data_loader:
-    def __init__(self, path: str, sample_rate: int, num_samples: int):
+class CremaD:
+    def __init__(self, path: str, sample_rate: int, num_samples: int, device = "cuda"):
         self.path = path
         self.target_sample_rate = sample_rate
         self.num_samples = num_samples
+        self.device = device
 
     def getData(self):
         if os.path.isdir(self.path):
@@ -77,48 +78,93 @@ class data_loader:
 
     def __getitem__(self, index):
         audio_path = f"{self.getData().Path[index]}"
-        label = f"{self.getData().Emotions[index]}"
+        label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+        new_dataset = self.getData().replace(({"Emotions": label_mapping}))
+        label = new_dataset.Emotions[index]
         signal, sr = torchaudio.load(audio_path)
+        signal = signal.to(self.device)
         # pre-processing
         signal = self.resample(signal, sr)
         signal = self.mix_down(signal)
         signal = self.cut_signal(signal)
-        signal = self.right_padding(signal)
-        # transformation = Transformation(self.target_sample_rate).mel_spectogram()
-        # signal = transformation(signal)
-        return signal,label,sr
+        processed_signal = self.right_padding(signal)
+        # transformation
+        transformation = Transformation(self.target_sample_rate, self.device).MFCC()
+        transformed_signal = transformation(processed_signal)
+        return transformed_signal,label
 
-    def waveplot(self, index):
-        data, emotion, sample_rate = self.__getitem__(index)
-        path = f"{self.getData().Path[index]}"
+    def plot(self, title, index):
+        audio_path = f"{self.getData().Path[index]}"
         emotion = f"{self.getData().Emotions[index]}"
-        print(f"This is a recording of {path} from index {index} of {emotion} emotion from the dataset")
+        np.seterr(divide = 'ignore')
 
-        plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
-        librosa.display.waveshow(data.numpy(),sr=sample_rate,color='pink')
-        plt.show()
+        waveform, sr = torchaudio.load(audio_path)
+        waveform = waveform.numpy()
 
-        time.sleep(1)
-        return Audio(path)
+        num_channels, num_frames = waveform.shape
+        time_axis = torch.arange(0, num_frames) / sr
 
-    def spectogram(self, index, display):
-        path = f"{self.getData().Path[index]}"
-        emotion = f"{self.getData().Emotions[index]}"
-        data, sample_rate = librosa.load(path)
-        x = librosa.stft(data)
-        # convert to db
-        xdb = librosa.amplitude_to_db(abs(x))
-        plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
-        librosa.display.specshow(xdb,sr=sample_rate, x_axis='time', y_axis=display)
+        figure, axes = plt.subplots(num_channels, 1, figsize=(15,4), facecolor=(.9,.9,.9))
+        if num_channels == 1:
+            axes = [axes]
+        for c in range(num_channels):
+            if title == "Waveform":
+                axes[c].plot(time_axis, waveform[c], linewidth=1, color = "pink")
+                axes[c].grid(True)
+                axes[c].set_xlabel('Time (s)')
+                axes[c].set_ylabel('Amplitude')
+                axes[c].set_title(emotion)
+            elif title == "MFCC":
+                mfcc_signal, label = self.__getitem__(index=index)
+                mfcc_signal = mfcc_signal.cpu()
+                axes[c].set_title("Mel-Frequency Cepstrum")
+                axes[c].set_ylabel("Features")
+                axes[c].set_xlabel("Frame")
+                im = axes[c].imshow(librosa.power_to_db(mfcc_signal[0]), origin="lower", aspect="auto")
+                figure.colorbar(im, ax=axes[c], format = "%+2.f dB")
+            else:
+                Pxx, freqs, bins, im = axes[c].specgram(waveform[c], Fs=sr, cmap = "plasma")
+                figure.colorbar(im,ax= axes[c],format="%+2.f dB")
+                axes[c].set_title(emotion)
+                axes[c].set_xlabel('Time (s)')
+                axes[c].set_ylabel('Frequency')
+            if num_channels > 1:
+                axes[c].set_ylabel(f'Channel {c+1}')
+        plt.show(block=False)
 
-        return plt.colorbar(format="%+2.f dB")
+    def plot_waveform(self, index):
+        self.plot(title="Waveform", index=index)
+
+    def plot_spectogram(self, index):
+        self.plot(title="Spectrogram", index=index)
+
+    def plot_mfcc(self, index):
+        self.plot(title="MFCC", index=index)
+
+    def audio_info(self, index):
+        audio_path = f"{self.getData().Path[index]}"
+        info = torchaudio.info(audio_path, format="wav")
+        return print(info)
+
+    def play_audio(self, index):
+        audio_path = f"{self.getData().Path[index]}"
+        waveform, sr = torchaudio.load(audio_path)
+        waveform = waveform.numpy()
+        num_channels, num_frames = waveform.shape
+        if num_channels == 1:
+            display(Audio(waveform[0], rate = sr))
+        elif num_channels == 2:
+            display(Audio((waveform[0], waveform[1]), rate = sr))
+        else:
+            raise ValueError("Waveform with more than 2 channels are not supported")
+
+    # def plot_mel_spectogram(self, index):
 
 
     def resample(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
+            resampler = resampler.to(self.device)
             signal = resampler(signal)
 
         return signal
@@ -144,20 +190,39 @@ class data_loader:
 
 
 class Transformation:
-    def __init__(self, sr):
+    def __init__(self, sr, device):
         self.sr = sr
+        self.device = device
     def mel_spectogram(self):
         mel_spectogram = torchaudio.transforms.MelSpectrogram(
             sample_rate= self.sr,
             n_fft=1024,
             hop_length=512,
             n_mels=64
-            )
+            ).to(self.device)
         return mel_spectogram
+
+    def MFCC(self):
+        n_mels = 80
+        n_mfcc = int(n_mels*(2/3))
+        n_fft = int(self.sr * 0.02)
+        hop_length = n_fft // 2
+        mfcc_transform = torchaudio.transforms.MFCC(
+            sample_rate=self.sr,
+            n_mfcc=n_mfcc,
+            melkwargs={
+                "n_fft": n_fft,
+                "n_mels": n_mels,
+                "hop_length": hop_length,
+                "mel_scale": "htk",
+                },
+            ).to(self.device)
+        return mfcc_transform
+
 
 class figures:
     def __init__(self, path: str, emotion: str):
-        self.dataset = data_loader(path).getData()
+        self.dataset = CremaD(path).getData()
         self.path = list(self.dataset["Path"][self.dataset["Emotions"] == emotion])
         self.idx = 0
         # self.idx = random.randint(0, len(path))
@@ -186,7 +251,7 @@ class figures:
 
 class audio_extraction:
     def __init__(self, path: str):
-        self.dataset = data_loader(path, sample_rate=22050, num_samples=22050).getData()
+        self.dataset = CremaD(path, sample_rate=22050, num_samples=22050).getData()
         self.file = self.dataset["Path"]
 
     def mfcc_formula(audio):
