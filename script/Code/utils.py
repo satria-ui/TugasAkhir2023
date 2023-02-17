@@ -25,7 +25,8 @@ class CremaD:
         if os.path.isdir(self.path):
             audio_path = []
             audio_emotion = []
-            directory_path = listdir(self.path)
+            items = listdir(self.path)
+            directory_path = [item for item in items if os.path.isfile(os.path.join(self.path, item))]
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
