@@ -19,55 +19,61 @@ def manual_label_encoder(data):
 
 def main():
     path = "../dataset/"
+    train_path = "../dataset/train/"
+    test_path = "../dataset/test/"
     print("Extracting Audio...")
-    dataset = audio_extraction(path = path).extract_audio()
+    train_data = audio_extraction(path = train_path).extract_audio()
+    test_data = audio_extraction(path = test_path).extract_audio()
     print("Done")
 
-    dataset['Emotions'] = manual_label_encoder(dataset['Emotions'])
+    test_data['Emotions'] = manual_label_encoder(test_data['Emotions'])
+    train_data['Emotions'] = manual_label_encoder(train_data['Emotions'])
 
-    X = dataset.drop(labels='Emotions', axis= 1)
-    Y = dataset['Emotions']
+    X_test = test_data.drop(labels='Emotions', axis= 1)
+    y_test = test_data['Emotions']
+    X_train = train_data.drop(labels='Emotions', axis= 1)
+    y_train = train_data["Emotions"]
 
     print("Creating Scaler...")
-    scaler = StandardScaler().fit(X)
+    scaler = StandardScaler().fit(X_train)
     joblib.dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=123)
+    # # X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=123)
 
-    x_train_scaled = scaler.transform(X_train)
-    x_test_scaled = scaler.transform(X_test)
+    X_train_scaled = scaler.transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
     # GridSearching
     # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
     # param_grid = {'C': [0.1,1,10], 'gamma': [1,0.1,0.01,0.001,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
 
     # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
-    # grid.fit(x_train_scaled,y_train)
+    # grid.fit(X_train_scaled,y_train)
 
     # print(" Results from Grid Search " )
     # print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
     # print("\n The best score across ALL searched params:\n",grid.best_score_)
     # print("\n The best parameters across ALL searched params:\n",grid.best_params_)
 
-    # grid_predictions = grid.predict(x_test_scaled)
+    # grid_predictions = grid.predict(X_test_scaled)
     # print(classification_report(y_test, grid_predictions))
 
     # print("The Model's Prediction ")
     # print("<<<===========================================>>>")
     # df = pd.DataFrame({'Actual': y_test, 'Predict': grid_predictions})
-    # print(df.head(10))
+    # print(df.head(20))
 
     print("Training...")
-    SVM_model = svm.SVC(C=10, gamma=0.01, kernel='rbf', probability=True)
-    SVM_model.fit(x_train_scaled, y_train)
+    SVM_model = svm.SVC(C=1, gamma="scale", kernel='rbf', probability=True)
+    SVM_model.fit(X_train_scaled, y_train)
     print("Saving Model...")
     filename = '../ML_Model/svm_model.sav'
     pickle.dump(SVM_model, open(filename, 'wb'))
     print("Done.")
 
-    y_pred=SVM_model.predict(x_test_scaled)
+    y_pred=SVM_model.predict(X_test_scaled)
 
     report=classification_report(y_test, y_pred)
     accuracy=accuracy_score(y_true=y_test, y_pred=y_pred)
@@ -79,7 +85,7 @@ def main():
     print("The Model's Prediction ")
     print("<<<===========================================>>>")
     df = pd.DataFrame({'Actual': y_test, 'Predict': y_pred})
-    print(df.head(10))
+    print(df.head(20))
 
 if __name__ == '__main__':
     main()

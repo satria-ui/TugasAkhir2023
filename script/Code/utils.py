@@ -159,9 +159,6 @@ class CremaD:
         else:
             raise ValueError("Waveform with more than 2 channels are not supported")
 
-    # def plot_mel_spectogram(self, index):
-
-
     def resample(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
