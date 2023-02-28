@@ -17,8 +17,12 @@ def manual_label_encoder(data):
 
     return encoded_data
 
+def reverse_label_encoder(data):
+    mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+    reverse_mapping_dict = {v: k for k, v in mapping.items()}
+    return [reverse_mapping_dict[label] for label in data]
+
 def main():
-    path = "../dataset/"
     train_path = "../dataset/train/"
     test_path = "../dataset/test/"
     print("Extracting Audio...")
@@ -40,52 +44,58 @@ def main():
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
-    # # X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=123)
-
     X_train_scaled = scaler.transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # GridSearching
+    ############################## GridSearching ##############################
     # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
-    # param_grid = {'C': [0.1,1,10], 'gamma': [1,0.1,0.01,0.001,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
+    param_grid = {'C': [0.001, 0.01, 0.1, 1, 3, 5, 7, 10, 100], 'gamma': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False], 'class_weight': [None, 'balanced'],
+              'shrinking': [True, False], 'degree': [2,3,4]}
 
-    # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
-    # grid.fit(X_train_scaled,y_train)
+    grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
+    grid.fit(X_train_scaled,y_train)
 
-    # print(" Results from Grid Search " )
-    # print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
-    # print("\n The best score across ALL searched params:\n",grid.best_score_)
-    # print("\n The best parameters across ALL searched params:\n",grid.best_params_)
-
-    # grid_predictions = grid.predict(X_test_scaled)
-    # print(classification_report(y_test, grid_predictions))
-
-    # print("The Model's Prediction ")
-    # print("<<<===========================================>>>")
-    # df = pd.DataFrame({'Actual': y_test, 'Predict': grid_predictions})
-    # print(df.head(20))
-
-    print("Training...")
-    SVM_model = svm.SVC(C=1, gamma="scale", kernel='rbf', probability=True)
-    SVM_model.fit(X_train_scaled, y_train)
-    print("Saving Model...")
-    filename = '../ML_Model/svm_model.sav'
-    pickle.dump(SVM_model, open(filename, 'wb'))
-    print("Done.")
-
-    y_pred=SVM_model.predict(X_test_scaled)
-
-    report=classification_report(y_test, y_pred)
-    accuracy=accuracy_score(y_true=y_test, y_pred=y_pred)
-
-    print("\nModel Summary:\n")
-    print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
-    print(report)
+    print(" Results from Grid Search " )
+    print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
+    print("\n The best score across ALL searched params:\n",grid.best_score_)
+    print("\n The best parameters across ALL searched params:\n",grid.best_params_)
+    
+    grid_predictions = grid.predict(X_test_scaled)
+    
+    y_pred_str = reverse_label_encoder(grid_predictions)
+    y_test_str = reverse_label_encoder(y_test)
+    
+    print(classification_report(y_test_str, y_pred_str))
 
     print("The Model's Prediction ")
     print("<<<===========================================>>>")
-    df = pd.DataFrame({'Actual': y_test, 'Predict': y_pred})
+    df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
     print(df.head(20))
+
+    # print("Training...")
+    # SVM_model = svm.SVC(C=1, gamma="scale", kernel='rbf', probability=True)
+    # SVM_model.fit(X_train_scaled, y_train)
+    # print("Saving Model...")
+    # # filename = '../ML_Model/svm_model.sav'
+    # # pickle.dump(SVM_model, open(filename, 'wb'))
+    # print("Done.")
+
+    # y_pred=SVM_model.predict(X_test_scaled)
+    
+    # y_pred_str = reverse_label_encoder(y_pred)
+    # y_test_str = reverse_label_encoder(y_test)
+
+    # report=classification_report(y_test_str, y_pred_str)
+    # accuracy=accuracy_score(y_true=y_test_str, y_pred=y_pred_str)
+
+    # print("\nModel Summary:\n")
+    # print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
+    # print(report)
+
+    # print("The Model's Prediction ")
+    # print("<<<===========================================>>>")
+    # df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
+    # print(df.head(20))
 
 if __name__ == '__main__':
     main()

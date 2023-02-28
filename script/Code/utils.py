@@ -15,7 +15,7 @@ import torch
 import joblib
 
 class CremaD:
-    def __init__(self, path: str, sample_rate: int, num_samples: int, device = "cuda"):
+    def __init__(self, path: str, sample_rate: int, num_samples: int, device = "cpu"):
         self.path = path
         self.target_sample_rate = sample_rate
         self.num_samples = num_samples
@@ -249,21 +249,36 @@ class figures:
 
 class audio_extraction:
     def __init__(self, path: str):
-        self.dataset = CremaD(path, sample_rate=22050, num_samples=22050).getData()
+        self.cmd = CremaD(path, sample_rate=22050, num_samples=22050)
+        self.dataset = self.cmd.getData()
         self.file = self.dataset["Path"]
 
-    def mfcc_formula(audio):
-        y,sr = librosa.load(audio, duration=4, offset=0.5)
-        n_fft = int(sr * 0.02)
-        hop_length = n_fft // 2
-        mfcc = np.mean(librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=n_fft, hop_length=hop_length).T, axis=0)
+    def mfcc_formula(self):
+        signal = []
+        for idx in range(len(self.file)):
+            mfcc_signal, _ = self.cmd[idx]
+            signal.append(mfcc_signal.numpy().reshape(mfcc_signal.size(1), mfcc_signal.size(2)))
 
-        return mfcc
+        return signal
+        # y,sr = librosa.load(audio)
+        # n_fft = int(sr * 0.02)
+        # hop_length = n_fft // 2
+        # mfcc = np.mean(librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=n_fft, hop_length=hop_length).T, axis=0)
+
+        # return mfcc
 
     def extract_audio(self):
-        X_mfcc = self.file.apply(lambda x: audio_extraction.mfcc_formula(x))
-        X = [item for item in X_mfcc]
-        X = np.array(X)
+        mfcc_signal = self.mfcc_formula()
+        X = np.mean(mfcc_signal, axis=-1)
+        # concatenated_frames = torch.cat(mfcc_signal, dim=0)
+        # features_list = []
+        # for i in range(concatenated_frames.size(0)):
+        #     sample_features = concatenated_frames[i].view(-1).numpy()
+        #     features_list.append(sample_features)
+        
+        # X_mfcc = self.file.apply(lambda x: audio_extraction.mfcc_formula(x))
+        # X = [item for item in X_mfcc]
+        # X = np.array(X)
         y = self.dataset["Emotions"]
 
         extracted_audio = pd.DataFrame(X)
