@@ -21,6 +21,47 @@ class CremaD:
         self.num_samples = num_samples
         self.device = device
 
+    def getWaveform(self):
+        # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+        if os.path.isdir(self.path):
+            counter = 0
+            audio_path = []
+            audio_waveforms = []
+            audio_emotion = []
+            items = listdir(self.path)
+            directory_path = [item for item in items if os.path.isfile(os.path.join(self.path, item))]
+
+            for audio in directory_path:
+                audio_path.append(self.path+audio)
+                waveform, _ = librosa.load(self.path+audio, duration=3, offset=0.5, sr=self.target_sample_rate)
+                # make sure waveform vectors are homogenous by defining explicitly
+                waveform_homo = np.zeros((int(self.target_sample_rate*3)))
+                waveform_homo[:len(waveform)] = waveform
+                
+                emotion = audio.split("_")
+
+                audio_waveforms.append(waveform_homo)
+
+                if emotion[2] == "ANG":
+                    audio_emotion.append("0")
+                elif emotion[2] == "FEA":
+                    audio_emotion.append("1")
+                elif emotion[2] == "DIS":
+                    audio_emotion.append("2")
+                elif emotion[2] == "HAP":
+                    audio_emotion.append("3")
+                elif emotion[2] == "NEU":
+                    audio_emotion.append("4")
+                elif emotion[2] == "SAD":
+                    audio_emotion.append("5")
+
+                counter += 1
+                print('\r'+f' Processed {counter}/{len(directory_path)} audio samples',end='')
+            
+            return audio_waveforms, audio_emotion
+        else:
+            return "Please provide directory path"
+
     def getData(self):
         if os.path.isdir(self.path):
             audio_path = []
@@ -321,5 +362,4 @@ class load_model:
         prediction = loaded_model.predict_proba(x_test)
         prediction = load_model.reverse_label_encoder(prediction)
         return prediction
-
 
