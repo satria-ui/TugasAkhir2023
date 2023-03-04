@@ -15,10 +15,11 @@ import torch
 import joblib
 
 class CremaD:
-    def __init__(self, path: str, sample_rate: int, num_samples: int, device = "cpu"):
+    def __init__(self, path: str, sample_rate: int, num_samples: int, duration: int, device = "cpu"):
         self.path = path
         self.target_sample_rate = sample_rate
         self.num_samples = num_samples
+        self.target_duration = duration
         self.device = device
 
     def getWaveform(self):
@@ -33,7 +34,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=3, offset=0.5, sr=self.target_sample_rate)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*3)))
                 waveform_homo[:len(waveform)] = waveform
@@ -59,8 +60,31 @@ class CremaD:
                 print('\r'+f' Processed {counter}/{len(directory_path)} audio samples',end='')
             
             return audio_waveforms, audio_emotion
+        
+        elif os.path.isfile(self.path):
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
+            # make sure waveform vectors are homogenous by defining explicitly
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
+
+            emotion = self.path.split("_")
+
+            if emotion[2] == "ANG":
+                audio_emotion = "0"
+            elif emotion[2] == "FEA":
+                audio_emotion = "1"
+            elif emotion[2] == "DIS":
+                audio_emotion = "2"
+            elif emotion[2] == "HAP":
+                audio_emotion = "3"
+            elif emotion[2] == "NEU":
+                audio_emotion = "4"
+            elif emotion[2] == "SAD":
+                audio_emotion = "5"
+
+            return waveform_homo, audio_emotion
         else:
-            return "Please provide directory path"
+            return "Wrong Audio Path"
 
     def getData(self):
         if os.path.isdir(self.path):
@@ -113,7 +137,7 @@ class CremaD:
             dataset = pd.concat([audio_path_dataset, emotion_dataset], axis= 1)
             return dataset
         else:
-            return("Wrong Path File")
+            return("Wrong Audio Path")
 
     def __len__(self):
         return len(self.getData())
@@ -135,70 +159,127 @@ class CremaD:
         transformed_signal = transformation(processed_signal)
         return transformed_signal,label
 
-    def plot(self, title, index):
-        audio_path = f"{self.getData().Path[index]}"
-        emotion = f"{self.getData().Emotions[index]}"
-        np.seterr(divide = 'ignore')
+    def plot(self, title):
+        if os.path.isfile(self.path):
+            waveform, emotion_idx = self.getWaveform()
+        else:
+            return "Please select single file of audio"
+        
+        mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+        reverse_mapping_dict = {v: k for k, v in mapping.items()}
+        
+        if int(emotion_idx) in reverse_mapping_dict:
+            emotion = reverse_mapping_dict[int(emotion_idx)]
+        else:
+            return "Unknown emotion value"
 
-        waveform, sr = torchaudio.load(audio_path)
-        waveform = waveform.numpy()
+        plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
+        plt.title(emotion, size=14)
 
-        num_channels, num_frames = waveform.shape
-        time_axis = torch.arange(0, num_frames) / sr
+        if title == "Waveform":
+            plt.xlabel('Time (s)')
+            plt.ylabel('Amplitude')
+            librosa.display.waveshow(waveform,sr=self.target_sample_rate,color='pink')
+        
+        elif title == "Spectogram":
+            plt.xlabel('Time (s)')
+            plt.ylabel('Frequency')
+            spec = librosa.stft(waveform)
+            spec_db = librosa.amplitude_to_db(abs(spec))
+            librosa.display.specshow(spec_db, sr=self.target_sample_rate, x_axis='time', y_axis='log', cmap='plasma')
+            plt.colorbar(format="%+2.f dB")
+        
+        elif title == "MFCC":
+            plt.xlabel('Frame')
+            plt.ylabel('MFCC Coefficients')
 
-        figure, axes = plt.subplots(num_channels, 1, figsize=(15,4), facecolor=(.9,.9,.9))
-        if num_channels == 1:
-            axes = [axes]
-        for c in range(num_channels):
-            if title == "Waveform":
-                axes[c].plot(time_axis, waveform[c], linewidth=1, color = "pink")
-                axes[c].grid(True)
-                axes[c].set_xlabel('Time (s)')
-                axes[c].set_ylabel('Amplitude')
-                axes[c].set_title(emotion)
-            elif title == "MFCC":
-                mfcc_signal, label = self.__getitem__(index=index)
-                mfcc_signal = mfcc_signal.cpu()
-                axes[c].set_title("Mel-Frequency Cepstrum")
-                axes[c].set_ylabel("Features")
-                axes[c].set_xlabel("Frame")
-                im = axes[c].imshow(librosa.power_to_db(mfcc_signal[0]), origin="lower", aspect="auto")
-                figure.colorbar(im, ax=axes[c], format = "%+2.f dB")
-            else:
-                Pxx, freqs, bins, im = axes[c].specgram(waveform[c], Fs=sr, cmap = "plasma")
-                figure.colorbar(im,ax= axes[c],format="%+2.f dB")
-                axes[c].set_title(emotion)
-                axes[c].set_xlabel('Time (s)')
-                axes[c].set_ylabel('Frequency')
-            if num_channels > 1:
-                axes[c].set_ylabel(f'Channel {c+1}')
-        plt.show(block=False)
+            waveform_np = np.array(waveform, dtype=np.float64)
+            m = 1
+            n = waveform_np.shape[0]  # number of columns
+            X_2d = waveform_np.reshape((m, n))
+            features_train = []
 
-    def plot_waveform(self, index):
-        self.plot(title="Waveform", index=index)
+            print('Waveforms:')
+            features = self.get_features(X_2d, features_train, self.target_sample_rate)
+            features = np.array(features)
+            # average across frequency axis to get a 2D array
+            features2d = np.squeeze(features)
+            print(f'\n\nFeatures set: {len(features_train)} total, {len(features_train)} samples')
+            print(f'Features (MFC coefficient matrix) shape: {len(features_train[0])} mel frequency coefficients x {len(features_train[0][1])} time steps')
 
-    def plot_spectogram(self, index):
-        self.plot(title="Spectrogram", index=index)
+            librosa.display.specshow(features2d, x_axis='frames', cmap='viridis')
+            plt.gca().set_ylabel('MFCC Coefficients', labelpad=10)
+            plt.colorbar(format="%+2.f dB")
+            plt.tight_layout()
+        
+        return plt.show()
 
-    def plot_mfcc(self, index):
-        self.plot(title="MFCC", index=index)
+    def plot_waveform(self):
+        self.plot(title="Waveform")
 
-    def audio_info(self, index):
-        audio_path = f"{self.getData().Path[index]}"
-        info = torchaudio.info(audio_path, format="wav")
+    def plot_spectogram(self):
+        self.plot(title="Spectogram")
+
+    def plot_mfcc(self):
+        self.plot(title="MFCC")
+
+    def audio_info(self):
+        info = torchaudio.info(self.path, format="wav")
         return print(info)
 
-    def play_audio(self, index):
-        audio_path = f"{self.getData().Path[index]}"
-        waveform, sr = torchaudio.load(audio_path)
-        waveform = waveform.numpy()
-        num_channels, num_frames = waveform.shape
-        if num_channels == 1:
-            display(Audio(waveform[0], rate = sr))
-        elif num_channels == 2:
-            display(Audio((waveform[0], waveform[1]), rate = sr))
+    def play_audio(self):
+        if os.path.isfile(self.path):
+            waveform, _ = self.getWaveform()
         else:
-            raise ValueError("Waveform with more than 2 channels are not supported")
+            return "Please select single file of audio"
+        
+        display(Audio(waveform, rate = self.target_sample_rate))
+    
+    def get_features(self, waveforms, features, sample_rate):
+        # initialize counter to track progress
+        file_count = 0
+
+        # process each waveform individually to get its MFCCs
+        for waveform in waveforms:
+            mfccs = Transformation.feature_mfcc(waveform, sample_rate)
+            features.append(mfccs)
+            file_count += 1
+            # print progress
+            print('\r'+f' Processed {file_count}/{len(waveforms)} waveforms',end='')
+
+        # return all features from list of waveforms
+        return features
+
+    def extract_audio_svm(self):
+        waveform, emotion_idx = self.getWaveform()
+        waveform_np = np.array(waveform, dtype=np.float64)
+        emotion_np = np.array(emotion_idx, dtype=int)
+        
+        mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+        reverse_mapping_dict = {v: k for k, v in mapping.items()}
+ 
+        if os.path.isfile(self.path):
+            emotions = reverse_mapping_dict[int(emotion_idx)]
+            m = 1
+            n = waveform_np.shape[0]  # number of columns
+            waveform_np = waveform_np.reshape((m, n))
+            features_train = []
+        elif os.path.isdir(self.path):
+            emotions = [reverse_mapping_dict[val] for val in emotion_np]
+            features_train = []
+        else:
+            return "Data input is neither file, nor directory"
+
+        print('\n\nWaveforms:')
+        features = self.get_features(waveform_np, features_train, self.target_sample_rate)
+        print(f'\n\nFeatures set: {len(features_train)} total samples')
+        print(f'Features (MFC coefficient matrix) shape: {len(features_train[0])} mel frequency coefficients x {len(features_train[0][1])} time steps')
+        mfcc_signal = np.array(features)
+        mean_data = np.mean(mfcc_signal, axis=-1)
+        df = pd.DataFrame(mean_data)
+        df["Emotions"] = emotions
+        return df
+
 
     def resample(self, signal, sr):
         if sr != self.target_sample_rate:
@@ -257,6 +338,26 @@ class Transformation:
                 },
             ).to(self.device)
         return mfcc_transform
+    
+    def feature_mfcc(waveform, sample_rate, winlen=512, window='hamming', n_mels=40, n_mfcc=20, hop_length=256):
+        # Preprocessing: pad waveform with zeros to be at least 1 second long
+        waveform = librosa.util.fix_length(waveform, size = sample_rate)
+        # Compute MFCCs
+        mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mels=n_mels, n_mfcc=n_mfcc,
+                                    win_length=winlen, window=window, hop_length=hop_length)
+        return mfcc
+    # def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):
+    #     mfc_coefficients=librosa.feature.mfcc(
+    #                         y=waveform, 
+    #                         sr=sample_rate, 
+    #                         n_mfcc=n_mfcc,
+    #                         n_fft=fft, 
+    #                         win_length=winlen, 
+    #                         window=window, 
+    #                         #hop_length=hop, 
+    #                         n_mels=mels, 
+    #                         fmax=sample_rate/2) 
+    #     return mfc_coefficients
 
 
 class figures:
@@ -288,7 +389,7 @@ class figures:
 
         return plt.colorbar(format="%+2.f dB")
 
-class audio_extraction:
+class audio_extraction_svm:
     def __init__(self, path: str):
         self.cmd = CremaD(path, sample_rate=22050, num_samples=22050)
         self.dataset = self.cmd.getData()

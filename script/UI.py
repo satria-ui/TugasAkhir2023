@@ -1,48 +1,11 @@
-from math import log2, pow
 import os
 import numpy as np
-from scipy.fftpack import fft
 import gradio as gr
 from datetime import date
 import librosa
 import pandas as pd
 import pickle
 import joblib
-
-def get_pitch(freq):
-    A4 = 440
-    C0 = A4 * pow(2, -4.75)
-    name = ["neutral",  "calm",  "happy",  "sad",  "angry",  "fearful",  "disgust",  "surprised"]
-    h = round(len(name) * log2(freq / C0))
-    n = h % len(name)
-    return name[n]
-
-def main_note(input):
-    rate, y = input
-    print(rate)
-    print(y)
-    print(len(y))
-    if len(y.shape) == 2:
-        y = y.T[0]
-    N = len(y)
-    T = 1.0 / rate
-    x = np.linspace(0.0, N * T, N)
-    yf = fft(y)
-    yf2 = 2.0 / N * np.abs(yf[0 : N // 2])
-    xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
-
-    volume_per_pitch = {}
-    total_volume = np.sum(yf2)
-    for freq, volume in zip(xf, yf2):
-        if freq == 0:
-            continue
-        pitch = get_pitch(freq)
-        if pitch not in volume_per_pitch:
-            volume_per_pitch[pitch] = 0
-        volume_per_pitch[pitch] += 1.0 * volume / total_volume
-    volume_per_pitch = {k: float(v) for k, v in volume_per_pitch.items()}
-    # dictionary
-    return volume_per_pitch
 
 def reverse_label_encoder(data):
     mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
