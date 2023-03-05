@@ -120,5 +120,5 @@ class CNNNetwork(nn.Module):
 
 if __name__ == "__main__":
     cnn = CNNNetwork()
-    model = cnn.to("cpu")
+    model = cnn.to("cuda")
     summary(model, (1, 40, 130))
