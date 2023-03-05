@@ -389,7 +389,7 @@ class figures:
 
         return plt.colorbar(format="%+2.f dB")
 
-class audio_extraction_svm:
+class audio_extraction:
     def __init__(self, path: str):
         self.cmd = CremaD(path, sample_rate=22050, num_samples=22050)
         self.dataset = self.cmd.getData()
@@ -452,9 +452,13 @@ class load_model:
                 pass
 
         except (ValueError, FileNotFoundError) as e:
-            return e
+            return e   
 
-        dataset = audio_extraction(self.audio).extract_audio()
+        SAMPLE_RATE = 22050
+        NUM_SAMPLE = 22050
+        DURATION = 3
+        
+        dataset = CremaD(path=self.audio, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
         X = dataset.drop(labels='Emotions', axis= 1)
         scaler = joblib.load('./Scaler/Z-ScoreScaler.joblib')
         x_scaled = scaler.transform(X)
@@ -462,5 +466,5 @@ class load_model:
 
         prediction = loaded_model.predict_proba(x_test)
         prediction = load_model.reverse_label_encoder(prediction)
-        return prediction
+        return prediction   
 

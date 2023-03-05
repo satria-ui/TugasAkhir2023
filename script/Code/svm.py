@@ -1,4 +1,4 @@
-from utils import audio_extraction
+from utils import CremaD
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -23,11 +23,15 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
+    SAMPLE_RATE = 22050
+    NUM_SAMPLE = 22050
+    DURATION = 3
     train_path = "../dataset/train/"
     test_path = "../dataset/test/"
-    print("Extracting Audio...")
-    train_data = audio_extraction(path = train_path).extract_audio()
-    test_data = audio_extraction(path = test_path).extract_audio()
+
+    print("Extracting Audio...\n")
+    train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
+    test_data = CremaD(path=test_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
     print("Done")
 
     test_data['Emotions'] = manual_label_encoder(test_data['Emotions'])
@@ -48,54 +52,54 @@ def main():
     X_test_scaled = scaler.transform(X_test)
 
     ############################## GridSearching ##############################
-    # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
-    param_grid = {'C': [0.001, 0.01, 0.1, 1, 3, 5, 7, 10, 100], 'gamma': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False], 'class_weight': [None, 'balanced'],
-              'shrinking': [True, False], 'degree': [2,3,4]}
+    # # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
+    # param_grid = {'C': [0.001, 0.01, 0.1, 1, 3, 5, 7, 10, 100], 'gamma': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False], 'class_weight': [None, 'balanced'],
+    #           'shrinking': [True, False], 'degree': [2,3,4]}
 
-    grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
-    grid.fit(X_train_scaled,y_train)
+    # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
+    # grid.fit(X_train_scaled,y_train)
 
-    print(" Results from Grid Search " )
-    print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
-    print("\n The best score across ALL searched params:\n",grid.best_score_)
-    print("\n The best parameters across ALL searched params:\n",grid.best_params_)
+    # print(" Results from Grid Search " )
+    # print("\n The best estimator across ALL searched params:\n",grid.best_estimator_)
+    # print("\n The best score across ALL searched params:\n",grid.best_score_)
+    # print("\n The best parameters across ALL searched params:\n",grid.best_params_)
     
-    grid_predictions = grid.predict(X_test_scaled)
+    # grid_predictions = grid.predict(X_test_scaled)
     
-    y_pred_str = reverse_label_encoder(grid_predictions)
-    y_test_str = reverse_label_encoder(y_test)
-    
-    print(classification_report(y_test_str, y_pred_str))
-
-    print("The Model's Prediction ")
-    print("<<<===========================================>>>")
-    df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
-    print(df.head(20))
-
-    # print("Training...")
-    # SVM_model = svm.SVC(C=1, gamma="scale", kernel='rbf', probability=True)
-    # SVM_model.fit(X_train_scaled, y_train)
-    # print("Saving Model...")
-    # # filename = '../ML_Model/svm_model.sav'
-    # # pickle.dump(SVM_model, open(filename, 'wb'))
-    # print("Done.")
-
-    # y_pred=SVM_model.predict(X_test_scaled)
-    
-    # y_pred_str = reverse_label_encoder(y_pred)
+    # y_pred_str = reverse_label_encoder(grid_predictions)
     # y_test_str = reverse_label_encoder(y_test)
-
-    # report=classification_report(y_test_str, y_pred_str)
-    # accuracy=accuracy_score(y_true=y_test_str, y_pred=y_pred_str)
-
-    # print("\nModel Summary:\n")
-    # print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
-    # print(report)
+    
+    # print(classification_report(y_test_str, y_pred_str))
 
     # print("The Model's Prediction ")
     # print("<<<===========================================>>>")
     # df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
     # print(df.head(20))
+
+    print("Training...")
+    SVM_model = svm.SVC(C=10, gamma=0.01, kernel='rbf', probability=True)
+    SVM_model.fit(X_train_scaled, y_train)
+    print("Saving Model...")
+    filename = '../ML_Model/svm_model.sav'
+    pickle.dump(SVM_model, open(filename, 'wb'))
+    print("Done.")
+
+    y_pred=SVM_model.predict(X_test_scaled)
+    
+    y_pred_str = reverse_label_encoder(y_pred)
+    y_test_str = reverse_label_encoder(y_test)
+
+    report=classification_report(y_test_str, y_pred_str)
+    accuracy=accuracy_score(y_true=y_test_str, y_pred=y_pred_str)
+
+    print("\nModel Summary:\n")
+    print("Model:{}    Accuracy: {:.2f}%".format(type(SVM_model).__name__ , accuracy*100))
+    print(report)
+
+    print("The Model's Prediction ")
+    print("<<<===========================================>>>")
+    df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
+    print(df.head(20))
 
 if __name__ == '__main__':
     main()
