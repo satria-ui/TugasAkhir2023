@@ -17,8 +17,8 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(16), # batch normalize the output feature map before activation
             nn.ReLU(), # feature map --> activation map
+            nn.BatchNorm2d(16), # batch normalize the output feature map before activation
             nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
             nn.Dropout(p=0.3), #randomly zero 30% of 1st layer's output feature map in training
             
@@ -30,8 +30,8 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(32),
             nn.ReLU(),
+            nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
             nn.Dropout(p=0.3), 
             
@@ -43,8 +43,8 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(64),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
             nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3))
         ############### 2ND PARALLEL 2D CONVOLUTION BLOCK ############
@@ -72,8 +72,8 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(32),
             nn.ReLU(),
+            nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
             nn.Dropout(p=0.3), 
             
@@ -85,8 +85,8 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(64),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
             nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3))
         
@@ -96,7 +96,7 @@ class CNNNetwork(nn.Module):
         # Each full convolution block outputs (64*1*4) embedding flattened to dim 256 1D array 
         # 256*2 == 512 input features --> 6 output emotions 
         self.fc1_linear = nn.Linear(
-                            in_features = (64*1*4)*2,
+                            in_features = (64*1*2)*2,
                             out_features = 6
                             ) 
         
@@ -121,4 +121,4 @@ class CNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = CNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 130))
+    summary(model, (1, 40, 87))
