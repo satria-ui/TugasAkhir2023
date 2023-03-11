@@ -57,7 +57,7 @@ class CremaD:
                     audio_emotion.append("5")
 
                 counter += 1
-                print('\r'+f' Processed {counter}/{len(directory_path)} audio samples',end='')
+                print('\r'+f' Processed {counter}/{len(directory_path)} audio waveforms',end='')
             
             return audio_waveforms, audio_emotion
         
@@ -245,7 +245,7 @@ class CremaD:
             features.append(mfccs)
             file_count += 1
             # print progress
-            print('\r'+f' Processed {file_count}/{len(waveforms)} waveforms',end='')
+            print('\r'+f' Processed {file_count}/{len(waveforms)} waveform features',end='')
 
         # return all features from list of waveforms
         return features
@@ -267,7 +267,7 @@ class CremaD:
         elif os.path.isdir(self.path):
             emotions = [reverse_mapping_dict[val] for val in emotion_np]
             features_train = []
-        else:
+        else:   
             return "Data input is neither file, nor directory"
 
         print('\n\nWaveforms:')
@@ -339,25 +339,25 @@ class Transformation:
             ).to(self.device)
         return mfcc_transform
     
-    def feature_mfcc(waveform, sample_rate, winlen=512, window='hamming', n_mels=40, n_mfcc=20, hop_length=256):
-        # Preprocessing: pad waveform with zeros to be at least 1 second long
-        waveform = librosa.util.fix_length(waveform, size = sample_rate)
-        # Compute MFCCs
-        mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mels=n_mels, n_mfcc=n_mfcc,
-                                    win_length=winlen, window=window, hop_length=hop_length)
-        return mfcc
-    # def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):
-    #     mfc_coefficients=librosa.feature.mfcc(
-    #                         y=waveform, 
-    #                         sr=sample_rate, 
-    #                         n_mfcc=n_mfcc,
-    #                         n_fft=fft, 
-    #                         win_length=winlen, 
-    #                         window=window, 
-    #                         #hop_length=hop, 
-    #                         n_mels=mels, 
-    #                         fmax=sample_rate/2) 
-    #     return mfc_coefficients
+    # def feature_mfcc(waveform, sample_rate, winlen=512, window='hamming', n_mels=40, n_mfcc=20, hop_length=256):
+    #     # Preprocessing: pad waveform with zeros to be at least 1 second long
+    #     waveform = librosa.util.fix_length(waveform, size = sample_rate)
+    #     # Compute MFCCs
+    #     mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mels=n_mels, n_mfcc=n_mfcc,
+    #                                 win_length=winlen, window=window, hop_length=hop_length)
+    #     return mfcc
+    def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):
+        mfc_coefficients=librosa.feature.mfcc(
+                            y=waveform, 
+                            sr=sample_rate, 
+                            n_mfcc=n_mfcc,
+                            n_fft=fft, 
+                            win_length=winlen, 
+                            window=window, 
+                            #hop_length=hop, 
+                            n_mels=mels, 
+                            fmax=sample_rate/2) 
+        return mfc_coefficients
 
 
 class figures:
