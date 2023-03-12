@@ -11,16 +11,16 @@ class CNNNetwork(nn.Module):
         
         # define single transformer encoder layer
         # 4 multi-head self-attention layers each with 40-->512--->40 feedforward network
-        transformer_layer = nn.TransformerEncoderLayer(
+        encoder_layer = nn.TransformerEncoderLayer(
             d_model=40, # input feature (frequency) dim after maxpooling 40*87 -> 40*21 (MFC*time)
-            nhead=4, # 4 self-attention layers in each multi-head self-attention layer in each encoder block
+            nhead=8, # 8 self-attention layers in each multi-head self-attention layer in each encoder block
             dim_feedforward=512, # 2 linear layers in each encoder block's feedforward network: dim 40-->512--->40
             dropout=0.4, 
             activation='relu'
         )
         
         # Complete transformer block contains 4 full transformer encoder layers (each w/ multihead self-attention+feedforward)
-        self.transformer_encoder = nn.TransformerEncoder(transformer_layer, num_layers=4)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
 
         ############### 1ST PARALLEL 2D CONVOLUTION BLOCK ############
         # 3 sequential conv2D layers: (1,40,282) --> (16, 20, 141) -> (32, 5, 35) -> (64, 1, 8)
@@ -33,7 +33,7 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.ReLU(), # feature map --> activation map
+            nn.ELU(), # feature map --> activation map
             nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
             nn.Dropout(p=0.3),
@@ -45,7 +45,7 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.ReLU(),
+            nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
             nn.Dropout(p=0.3), 
@@ -58,7 +58,7 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.ReLU(),
+            nn.ELU(),
             nn.BatchNorm2d(64),
             nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3))
@@ -75,7 +75,7 @@ class CNNNetwork(nn.Module):
                 padding=1
                       ),
             nn.BatchNorm2d(16), # batch normalize the output feature map before activation
-            nn.ReLU(), # feature map --> activation map
+            nn.ELU(), # feature map --> activation map
             nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
             nn.Dropout(p=0.3), #randomly zero 30% of 1st layer's output feature map in training
             
@@ -87,7 +87,7 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.ReLU(),
+            nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
             nn.Dropout(p=0.3), 
@@ -100,7 +100,7 @@ class CNNNetwork(nn.Module):
                 stride=1,
                 padding=1
                       ),
-            nn.ReLU(),
+            nn.ELU(),
             nn.BatchNorm2d(64),
             nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3))

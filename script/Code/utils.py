@@ -6,16 +6,20 @@ import pickle
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import librosa
+from sklearn.model_selection import train_test_split
 import numpy as np
 from IPython.display import Audio, display
 import librosa.display
 import random
 import torchaudio
+from torch import nn
+from Code.cnn import CNNNetwork
+from Code.LeNet import LeNet
 import torch
 import joblib
 
 class CremaD:
-    def __init__(self, path: str, sample_rate: int, num_samples: int, duration: int, device = "cpu"):
+    def __init__(self, path: str, sample_rate: int, num_samples: int, duration: int, device = "cuda"):
         self.path = path
         self.target_sample_rate = sample_rate
         self.num_samples = num_samples
@@ -249,6 +253,117 @@ class CremaD:
 
         # return all features from list of waveforms
         return features
+    
+    def create_readyToTrain_data(self, test_data, train_data):
+        self.path = test_data
+        print(f"Path is now {self.path}")
+        waveforms_testing, emotions_testing = self.getWaveform()
+        
+        self.path = train_data
+        print(f"\nPath is now {self.path}")
+        waveforms_training, emotions_training = self.getWaveform()
+        
+        #################### Split Train and Validation Data ####################
+        print("\n\nSplitting train and validation data...\n")
+        waveforms_testing = np.array(waveforms_testing, dtype=np.float64)
+        emotions_testing = np.array(emotions_testing, dtype=int)
+        waveforms_training = np.array(waveforms_training, dtype=np.float64)
+        emotions_training = np.array(emotions_training, dtype=int)
+
+        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.2, random_state=123, stratify=emotions_training)
+        X_test = waveforms_testing
+        y_test = emotions_testing
+        (unique_train, counts_train) = np.unique(y_train, return_counts=True)
+        (unique_valid, counts_valid) = np.unique(y_valid, return_counts=True)
+        (unique_test, counts_test) = np.unique(y_test, return_counts=True)
+        print(f'Training waveforms:{X_train.shape}, y_train:{y_train.shape}')
+        print(f'Validation waveforms:{X_valid.shape}, y_valid:{y_valid.shape}')
+        print(f'Test waveforms:{X_test.shape}, y_test:{y_test.shape}')
+        print(f"\nTrain Set Data : {len(y_train)}")
+        print("Train Emotion Count")
+        print(unique_train, counts_train)
+        print(f"Validation Set Data : {len(y_valid)}")
+        print("Validation Emotion Count")
+        print(unique_valid, counts_valid)
+        print(f"Test Set Data : {len(y_test)}")
+        print("Test Emotion Count")
+        print(unique_test, counts_test)
+
+        #################### EXTRACT FEATURES ####################
+        features_train, features_valid, features_test = [],[],[]
+        print('\nExtracting Train waveforms:')
+        features_train = self.get_features(X_train, features_train, self.target_sample_rate)
+
+        print('\n\nExtracting Validation waveforms:')
+        features_valid = self.get_features(X_valid, features_valid, self.target_sample_rate)
+
+        print('\n\nExtracting Test waveforms:')
+        features_test = self.get_features(X_test, features_test, self.target_sample_rate)
+
+        print(f'\n\nExtracted Features set: {len(features_train)+len(features_test)+len(features_valid)} total, {len(features_train)} train, {len(features_valid)} validation, and {len(features_test)} test data')
+        print(f'Features shape: {len(features_train[0])} mel frequency coefficients x {len(features_train[0][1])} time steps')
+
+        #################### FORMAT DATA FOR TENSOR ####################
+        X_train = np.expand_dims(features_train,1)
+        X_valid = np.expand_dims(features_valid, 1)
+        X_test = np.expand_dims(features_test,1)
+
+        y_train = np.array(y_train, dtype=int)
+        y_valid = np.array(y_valid, dtype=int)
+        y_test = np.array(y_test, dtype=int)
+        
+        #################### FEATURE SCALING ####################
+        scaler = StandardScaler()
+
+        #### Scale the training data ####
+        BATCH,CHANNEL,WIDTH,HEIGHT = X_train.shape
+        X_train = np.reshape(X_train, (BATCH,-1)) 
+        X_train = scaler.fit_transform(X_train)
+        X_train = np.reshape(X_train, (BATCH,CHANNEL,WIDTH,HEIGHT))
+
+        ##### Scale the validation set ####
+        BATCH,CHANNEL,WIDTH,HEIGHT = X_valid.shape
+        X_valid = np.reshape(X_valid, (BATCH,-1))
+        X_valid = scaler.transform(X_valid)
+        X_valid = np.reshape(X_valid, (BATCH,CHANNEL,WIDTH,HEIGHT))
+
+        #### Scale the test set ####
+        BATCH,CHANNEL,WIDTH,HEIGHT = X_test.shape
+        X_test = np.reshape(X_test, (BATCH,-1))
+        X_test = scaler.transform(X_test)
+        X_test = np.reshape(X_test, (BATCH,CHANNEL,WIDTH,HEIGHT))
+
+        # check shape of each set again
+        print(f'\nShape of 4D feature array for input tensor: {X_train.shape} train, {X_valid.shape} validation, {X_test.shape} test')
+        joblib.dump(scaler, "./Scaler/CNNScaler.joblib")
+
+        #################### SAVE READY TO TRAIN DATA ####################
+        filename = "./Scaler/deepLearning_ready_data.npy"
+        with open(filename, 'wb') as f:
+            np.save(f, X_train)
+            np.save(f, X_valid)
+            np.save(f, X_test)
+            np.save(f, y_train)
+            np.save(f, y_valid)
+            np.save(f, y_test)
+
+        print(f'\nFeatures and labels saved to {filename}')
+        return X_train, X_valid, X_test, y_train, y_valid, y_test
+
+    def load_readyToTrain_data(self, train_file):
+        with open(train_file, 'rb') as f:
+            X_train = np.load(f)
+            X_valid = np.load(f)
+            X_test = np.load(f)
+            y_train = np.load(f)
+            y_valid = np.load(f)
+            y_test = np.load(f)
+        print("Data Loaded with shape:")
+        print(f'X_train:{X_train.shape}, y_train:{y_train.shape}')
+        print(f'X_valid:{X_valid.shape}, y_valid:{y_valid.shape}')
+        print(f'X_test:{X_test.shape}, y_test:{y_test.shape}') 
+        
+        return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
         waveform, emotion_idx = self.getWaveform()
@@ -280,7 +395,6 @@ class CremaD:
         df["Emotions"] = emotions
         return df
 
-
     def resample(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
@@ -308,6 +422,172 @@ class CremaD:
             signal = signal[:, :self.num_samples]
         return signal
 
+class DeepLearning:
+    def __init__(self, sample_rate: int, duration: int, device = "cuda"):
+        self.target_sample_rate = sample_rate
+        self.target_duration = duration
+        self.device = device
+    
+    def train(self, train_file, model, num_epochs):
+        CMD = CremaD(path="./dataset/", sample_rate=self.target_sample_rate, duration=self.target_duration, num_samples=22050)
+        X_train, X_valid, X_test, y_train, y_valid, y_test = CMD.load_readyToTrain_data(train_file)
+        train_size = X_train.shape[0]
+        minibatch = 32
+
+        print(f'\n{self.device} selected')
+
+        # instantiate model and move to GPU for training
+        model = model().to(self.device) 
+        optimizer = torch.optim.SGD(model.parameters(),lr=0.01, weight_decay=0.001, momentum=0.8)
+        # optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+        criterion = nn.CrossEntropyLoss()
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
+        print('Number of trainable params: ',sum(p.numel() for p in model.parameters()))
+
+        # instantiate the checkpoint save function
+        save_checkpoint = self.make_save_checkpoint()
+        # instantiate the training step function 
+        train_step = self.train_single_epoch(model, optimizer, criterion)
+        # instantiate the validation loop function
+        validate = self.validate_single_epoch(model, criterion)
+
+        # instantiate lists to hold scalar performance metrics to plot later
+        train_losses = []
+        valid_losses = []
+        train_accuracy = []
+        valid_accuracy = []
+
+        print("\nStart Training...")
+        for epoch in range(num_epochs):
+            
+            # set model to train phase
+            model.train()         
+            
+            # shuffle entire training set in each epoch to randomize minibatch order
+            train_indices = np.random.permutation(train_size) 
+            
+            # shuffle the training set for each epoch:
+            X_train = X_train[train_indices,:,:,:] 
+            y_train = y_train[train_indices]
+
+            # instantiate scalar values to keep track of progress after each epoch so we can stop training when appropriate 
+            epoch_acc = 0 
+            epoch_loss = 0
+            num_iterations = int(train_size / minibatch)
+            
+            # create a loop for each minibatch of 32 samples:
+            for i in range(num_iterations):
+                
+                # we have to track and update minibatch position for the current minibatch
+                # if we take a random batch position from a set, we almost certainly will skip some of the data in that set
+                # track minibatch position based on iteration number:
+                batch_start = i * minibatch 
+                # ensure we don't go out of the bounds of our training set:
+                batch_end = min(batch_start + minibatch, train_size) 
+                # ensure we don't have an index error
+                actual_batch_size = batch_end-batch_start 
+                
+                # get training minibatch with all channnels and 2D feature dims
+                X = X_train[batch_start:batch_end,:,:,:] 
+                # get training minibatch labels 
+                Y = y_train[batch_start:batch_end] 
+
+                # instantiate training tensors
+                X_tensor = torch.tensor(X, device=self.device).float() 
+                Y_tensor = torch.tensor(Y, dtype=torch.long,device=self.device)
+                
+                # Pass input tensors thru 1 training step (fwd+backwards pass)
+                loss, acc = train_step(X_tensor,Y_tensor) 
+                
+                # aggregate batch accuracy to measure progress of entire epoch
+                epoch_acc += acc * actual_batch_size / train_size
+                epoch_loss += loss * actual_batch_size / train_size
+                
+                # keep track of the iteration to see if the model's too slow
+                print('\r'+f'Epoch {epoch+1}: iteration {i}/{num_iterations}',end='')
+            
+            scheduler.step(epoch_loss)
+            # create tensors from validation set
+            X_valid_tensor = torch.tensor(X_valid,device=self.device).float()
+            Y_valid_tensor = torch.tensor(y_valid,dtype=torch.long,device=self.device)
+            
+            # calculate validation metrics to keep track of progress; don't need predictions now
+            valid_loss, valid_acc, _ = validate(X_valid_tensor,Y_valid_tensor)
+            
+            # accumulate scalar performance metrics at each epoch to track and plot later
+            train_losses.append(epoch_loss)
+            valid_losses.append(valid_loss)
+            train_accuracy.append(epoch_acc.item())
+            valid_accuracy.append(valid_acc.item())
+            
+            # Save checkpoint of the model
+            checkpoint_filename = './Checkpoint/cnnModel-{:03d}.pkl'.format(epoch)
+            save_checkpoint(optimizer, model, epoch, checkpoint_filename)
+            
+            # keep track of each epoch's progress
+            print(f'\nEpoch {epoch+1} --- loss:{epoch_loss:.2f}, Epoch accuracy:{epoch_acc:.2f}%, Validation loss:{valid_loss:.2f}, Validation accuracy:{valid_acc:.2f}%')
+        print("Finished.")
+        return train_losses, valid_losses, train_accuracy, valid_accuracy
+    
+    def train_single_epoch(self, model, optimizer, criterion):
+        # define the training step of the training phase
+        def train_step(X,Y):  
+            # forward pass
+            output_logits, output_softmax = model(X)
+            predictions = torch.argmax(output_softmax,dim=1)
+            accuracy = torch.sum(Y==predictions)/float(len(Y))
+            
+            # compute loss on logits because nn.CrossEntropyLoss implements log softmax
+            loss = criterion(input=output_logits, target=Y)
+            # loss = criterion(output_logits, Y) 
+            
+            # compute gradients for the optimizer to use 
+            loss.backward()
+            
+            # update network parameters based on gradient stored (by calling loss.backward())
+            optimizer.step()
+            
+            # zero out gradients for next pass
+            # pytorch accumulates gradients from backwards passes (convenient for RNNs)
+            optimizer.zero_grad() 
+            return loss.item(), accuracy*100
+        return train_step
+    
+    def validate_single_epoch(self, model, criterion):
+        def validate(X,Y):
+            # don't want to update any network parameters on validation passes: don't need gradient
+            # wrap in torch.no_grad to save memory and compute in validation phase: 
+            with torch.no_grad(): 
+                # set model to validation phase i.e. turn off dropout and batchnorm layers 
+                model.eval()
+                # get the model's predictions on the validation set
+                output_logits, output_softmax = model(X)
+                predictions = torch.argmax(output_softmax,dim=1)
+                # calculate the mean accuracy over the entire validation set
+                accuracy = torch.sum(Y==predictions)/float(len(Y))
+                # compute error from logits (nn.crossentropy implements softmax)
+                loss = criterion(input=output_logits, target=Y)
+                # loss = criterion(output_logits,Y)
+            return loss.item(), accuracy*100, predictions
+        return validate
+    
+    def make_save_checkpoint(self): 
+        def save_checkpoint(optimizer, model, epoch, filename):
+            checkpoint_dict = {
+                'optimizer': optimizer.state_dict(),
+                'model': model.state_dict(),
+                'epoch': epoch
+            }
+            torch.save(checkpoint_dict, filename)
+        return save_checkpoint
+    
+    def load_checkpoint(self, optimizer, model, filename):
+        checkpoint_dict = torch.load(filename)
+        epoch = checkpoint_dict['epoch']
+        model.load_state_dict(checkpoint_dict['model'])
+        if optimizer is not None:
+            optimizer.load_state_dict(checkpoint_dict['optimizer'])
+        return epoch
 
 class Transformation:
     def __init__(self, sr, device):
@@ -456,15 +736,14 @@ class load_model:
 
         SAMPLE_RATE = 22050
         NUM_SAMPLE = 22050
-        DURATION = 3
+        DURATION = 2
         
         dataset = CremaD(path=self.audio, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
         X = dataset.drop(labels='Emotions', axis= 1)
-        scaler = joblib.load('./Scaler/Z-ScoreScaler.joblib')
+        scaler = joblib.load('./Scaler/SVMScaler.joblib')
         x_scaled = scaler.transform(X)
         x_test = pd.DataFrame(x_scaled)
 
         prediction = loaded_model.predict_proba(x_test)
         prediction = load_model.reverse_label_encoder(prediction)
         return prediction   
-

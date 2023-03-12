@@ -44,7 +44,7 @@ def main():
 
     print("Creating Scaler...")
     scaler = StandardScaler().fit(X_train)
-    joblib.dump(scaler, '../Scaler/Z-ScoreScaler.joblib')
+    joblib.dump(scaler, '../Scaler/SVMScaler.joblib')
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
