@@ -38,7 +38,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.5)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
                 waveform_homo[:len(waveform)] = waveform
