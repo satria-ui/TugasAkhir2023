@@ -2,7 +2,7 @@ from torch import nn
 import torch
 from torchsummary import summary
 
-class CNNNetwork(nn.Module):
+class TransformerCNNNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         ################ TRANSFORMER BLOCK #############################
@@ -123,7 +123,7 @@ class CNNNetwork(nn.Module):
         # create final feature embedding from 1st convolutional layer 
         # input features pased through 4 sequential 2D convolutional layers
         conv2d_embedding1 = self.conv2Dblock1(input_data)
-        conv2d_embedding1 = torch.flatten(conv2d_embedding1, start_dim=1) 
+        conv2d_embedding1 = torch.flatten(conv2d_embedding1, start_dim=1)
         conv2d_embedding2 = self.conv2Dblock2(input_data)
         conv2d_embedding2 = torch.flatten(conv2d_embedding2, start_dim=1) 
 
@@ -153,6 +153,6 @@ class CNNNetwork(nn.Module):
         return output_logits, output_softmax
 
 if __name__ == "__main__":
-    cnn = CNNNetwork()
+    cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
     summary(model, (1, 40, 87))

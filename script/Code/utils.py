@@ -13,7 +13,7 @@ import librosa.display
 import random
 import torchaudio
 from torch import nn
-from Code.cnn import CNNNetwork
+from Code.TransformerCnn import CNNNetwork
 from Code.LeNet import LeNet
 import torch
 import joblib
