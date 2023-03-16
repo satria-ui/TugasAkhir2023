@@ -13,7 +13,7 @@ import librosa.display
 import random
 import torchaudio
 from torch import nn
-from Code.TransformerCnn import CNNNetwork
+from Code.TransformerCnn import TransformerCNNNetwork
 from Code.LeNet import LeNet
 import torch
 import joblib
@@ -38,7 +38,8 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
+                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
+                waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
                 waveform_homo[:len(waveform)] = waveform
@@ -66,10 +67,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
+            # waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
+            waveform_homo, _ = librosa.load(self.path)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = self.path.split("_")
 
@@ -177,21 +179,27 @@ class CremaD:
         else:
             return "Unknown emotion value"
 
-        plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
-        plt.title(emotion, size=14)
+        # plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
+        plt.figure(figsize=(4,2))
+        plt.title(emotion, size=8)
 
         if title == "Waveform":
-            plt.xlabel('Time (s)')
-            plt.ylabel('Amplitude')
+            plt.xlabel('Time (s)', fontsize=8)
+            plt.xticks(fontsize=8)
+            plt.ylabel('Amplitude', fontsize=8)
+            plt.yticks(fontsize=8)
             librosa.display.waveshow(waveform,sr=self.target_sample_rate,color='pink')
         
         elif title == "Spectogram":
-            plt.xlabel('Time (s)')
-            plt.ylabel('Frequency')
+            plt.xlabel('Time (s)', fontsize=8)
+            plt.xticks(fontsize=8)
+            plt.ylabel('Frequency', fontsize=8)
+            plt.yticks(fontsize=8)
             spec = librosa.stft(waveform)
             spec_db = librosa.amplitude_to_db(abs(spec))
             librosa.display.specshow(spec_db, sr=self.target_sample_rate, x_axis='time', y_axis='log', cmap='plasma')
-            plt.colorbar(format="%+2.f dB")
+            cbar = plt.colorbar(format="%+2.f dB")
+            cbar.ax.tick_params(labelsize=8)
         
         elif title == "MFCC":
             plt.xlabel('Frame')
