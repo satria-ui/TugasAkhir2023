@@ -1,6 +1,5 @@
 from os import listdir
 import os
-import time
 import pandas as pd
 import pickle
 from matplotlib import pyplot as plt
@@ -13,8 +12,6 @@ import librosa.display
 import random
 import torchaudio
 from torch import nn
-from Code.TransformerCnn import TransformerCNNNetwork
-from Code.LeNet import LeNet
 import torch
 import joblib
 
@@ -25,6 +22,77 @@ class CremaD:
         self.num_samples = num_samples
         self.target_duration = duration
         self.device = device
+    
+    def getWaveformRavdess(self):
+        if os.path.isdir(self.path):
+            counter = 0
+            audio_path = []
+            audio_waveforms = []
+            audio_emotion = []
+            items = os.listdir(self.path)
+            directory_path = [item for item in items if os.path.isfile(os.path.join(self.path, item))]
+
+            for audio in directory_path:
+                audio_path.append(self.path + audio)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.5)
+                # waveform, _ = librosa.load(self.path+audio)
+
+                # make sure waveform vectors are homogenous by defining explicitly
+                waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+                waveform_homo[:len(waveform)] = waveform
+                
+                emotion = int(audio.split("-")[2])
+                audio_waveforms.append(waveform_homo)
+
+                # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+                if emotion == int(5):
+                    audio_emotion.append("0")
+                elif emotion == int(6):
+                    audio_emotion.append("1")
+                elif emotion == int(7):
+                    audio_emotion.append("2")
+                elif emotion == int(3):
+                    audio_emotion.append("3")
+                elif emotion == int(1):
+                    audio_emotion.append("4")
+                elif emotion == int(4):
+                    audio_emotion.append("5")
+
+                counter += 1
+                print('\r'+f' Processed {counter}/{len(directory_path)} audio waveforms',end='')
+            
+            return audio_waveforms, audio_emotion
+        
+        elif os.path.isfile(self.path):
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.5)
+            # make sure waveform vectors are homogenous by defining explicitly
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
+
+            emotion = int(self.path.split("-")[2])
+
+            # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+            if emotion == int(5):
+                audio_emotion = "0"
+            elif emotion == int(6):
+                audio_emotion = "1"
+            elif emotion == int(7):
+                audio_emotion = "2"
+            elif emotion == int(3):
+                audio_emotion = "3"
+            elif emotion == int(1):
+                audio_emotion = "4"
+            elif emotion == int(4):
+                audio_emotion = "5"
+
+            print(audio_emotion)
+        
+            return waveform_homo, audio_emotion
+        else:
+            return "Wrong Audio Path"
+
+
+
 
     def getWaveform(self):
         # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
@@ -38,8 +106,8 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
-                waveform, _ = librosa.load(self.path+audio)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+                # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
                 waveform_homo[:len(waveform)] = waveform
@@ -67,11 +135,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            # waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.4)
-            waveform_homo, _ = librosa.load(self.path)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+            # waveform_homo, _ = librosa.load(self.path, duration = self.target_duration)
             # make sure waveform vectors are homogenous by defining explicitly
-            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            # waveform_homo[:len(waveform)] = waveform
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
 
             emotion = self.path.split("_")
 
@@ -167,7 +235,7 @@ class CremaD:
 
     def plot(self, title):
         if os.path.isfile(self.path):
-            waveform, emotion_idx = self.getWaveform()
+            waveform, emotion_idx = self.getWaveformRavdess()
         else:
             return "Please select single file of audio"
         
@@ -241,7 +309,7 @@ class CremaD:
 
     def play_audio(self):
         if os.path.isfile(self.path):
-            waveform, _ = self.getWaveform()
+            waveform, _ = self.getWaveformRavdess()
         else:
             return "Please select single file of audio"
         
@@ -265,11 +333,13 @@ class CremaD:
     def create_readyToTrain_data(self, test_data, train_data):
         self.path = test_data
         print(f"Path is now {self.path}")
-        waveforms_testing, emotions_testing = self.getWaveform()
+        # waveforms_testing, emotions_testing = self.getWaveform()
+        waveforms_testing, emotions_testing = self.getWaveformRavdess()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
-        waveforms_training, emotions_training = self.getWaveform()
+        # waveforms_training, emotions_training = self.getWaveform()
+        waveforms_training, emotions_training = self.getWaveformRavdess()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -278,7 +348,7 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.2, random_state=123, stratify=emotions_training)
+        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.1, random_state=123, stratify=emotions_training)
         X_test = waveforms_testing
         y_test = emotions_testing
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
@@ -374,7 +444,7 @@ class CremaD:
         return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
-        waveform, emotion_idx = self.getWaveform()
+        waveform, emotion_idx = self.getWaveformRavdess()
         waveform_np = np.array(waveform, dtype=np.float64)
         emotion_np = np.array(emotion_idx, dtype=int)
         
@@ -529,7 +599,7 @@ class DeepLearning:
             valid_accuracy.append(valid_acc.item())
             
             # Save checkpoint of the model
-            checkpoint_filename = './Checkpoint/cnnModel-{:03d}.pkl'.format(epoch)
+            checkpoint_filename = './Checkpoint/cnnModel-{:03d}.pkl'.format(epoch+1)
             save_checkpoint(optimizer, model, epoch, checkpoint_filename)
             
             # keep track of each epoch's progress

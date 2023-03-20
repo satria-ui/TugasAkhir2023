@@ -112,7 +112,7 @@ class TransformerCNNNetwork(nn.Module):
         # Full transformer block outputs 40*21 feature map, which we time-avg to dim 40 1D array
         # 256*2 == 512 input features --> 6 output emotions 
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*2)*2)+40,
+                            in_features = ((64*1*5)*2)+40,
                             out_features = 6
                             ) 
         
@@ -155,4 +155,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 87))
+    summary(model, (1, 40, 216))

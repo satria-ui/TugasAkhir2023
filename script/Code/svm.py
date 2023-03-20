@@ -1,6 +1,5 @@
 from utils import CremaD
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn import svm
 import pandas as pd
@@ -23,11 +22,11 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
-    SAMPLE_RATE = 22050
+    SAMPLE_RATE = 48000
     NUM_SAMPLE = 22050
-    DURATION = 2
-    train_path = "../dataset/train/"
-    test_path = "../dataset/test/"
+    DURATION = 3.07
+    train_path = "../dataset/train_RAVDESS/"
+    test_path = "../dataset/test_RAVDESS/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
@@ -99,7 +98,7 @@ def main():
     print("The Model's Prediction ")
     print("<<<===========================================>>>")
     df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
-    print(df.head(20))
+    print(df[41:61])
 
 if __name__ == '__main__':
     main()
