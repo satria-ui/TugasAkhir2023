@@ -91,9 +91,6 @@ class CremaD:
         else:
             return "Wrong Audio Path"
 
-
-
-
     def getWaveform(self):
         # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
         if os.path.isdir(self.path):
@@ -159,6 +156,26 @@ class CremaD:
             return waveform_homo, audio_emotion
         else:
             return "Wrong Audio Path"
+    def getDataRavdess(self):
+        if os.path.isdir(self.path):
+            file_emotion = []
+            file_path = []
+
+            items = os.listdir(self.path)
+
+            for x in items:
+                part = x.split('-')
+                file_emotion.append(int(part[2]))
+                file_path.append(self.path+x)
+
+            path_df = pd.DataFrame(file_path, columns=['Path'])
+            emotion_df = pd.DataFrame(file_emotion, columns=['Emotions'])
+            Ravdess_df = pd.concat([path_df, emotion_df], axis=1)
+
+            Ravdess_df.Emotions.replace({1:'Neutral', 3:'Happy', 4:'Sad', 5:'Angry', 6:'Fear', 7:'Disgust'}, inplace=True)
+            return Ravdess_df
+        else:
+            return "Wrong audio path"
 
     def getData(self):
         if os.path.isdir(self.path):
