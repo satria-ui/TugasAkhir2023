@@ -34,7 +34,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path + audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.5)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
                 # waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
@@ -64,7 +64,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.5)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
             waveform_homo[:len(waveform)] = waveform
@@ -84,8 +84,6 @@ class CremaD:
                 audio_emotion = "4"
             elif emotion == int(4):
                 audio_emotion = "5"
-
-            print(audio_emotion)
         
             return waveform_homo, audio_emotion
         else:
@@ -433,7 +431,7 @@ class CremaD:
         joblib.dump(scaler, "./Scaler/CNNScaler.joblib")
 
         #################### SAVE READY TO TRAIN DATA ####################
-        filename = "./Scaler/deepLearning_ready_data.npy"
+        filename = "./Scaler/CREMA-D_ready_data.npy"
         with open(filename, 'wb') as f:
             np.save(f, X_train)
             np.save(f, X_valid)
@@ -533,10 +531,10 @@ class DeepLearning:
 
         # instantiate model and move to GPU for training
         model = model().to(self.device) 
-        optimizer = torch.optim.SGD(model.parameters(),lr=0.01, weight_decay=0.001, momentum=0.8)
-        # optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+        optimizer = torch.optim.SGD(model.parameters(),lr=0.001, weight_decay=0.001, momentum=0.8)
+        # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         criterion = nn.CrossEntropyLoss()
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
         print('Number of trainable params: ',sum(p.numel() for p in model.parameters()))
 
         # instantiate the checkpoint save function
@@ -601,7 +599,7 @@ class DeepLearning:
                 # keep track of the iteration to see if the model's too slow
                 print('\r'+f'Epoch {epoch+1}: iteration {i}/{num_iterations}',end='')
             
-            scheduler.step(epoch_loss)
+            # scheduler.step(epoch_loss)
             # create tensors from validation set
             X_valid_tensor = torch.tensor(X_valid,device=self.device).float()
             Y_valid_tensor = torch.tensor(y_valid,dtype=torch.long,device=self.device)

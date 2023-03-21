@@ -15,7 +15,7 @@ class TransformerCNNNetwork(nn.Module):
             d_model=40, # input feature (frequency) dim after maxpooling 40*87 -> 40*21 (MFC*time)
             nhead=8, # 8 self-attention layers in each multi-head self-attention layer in each encoder block
             dim_feedforward=512, # 2 linear layers in each encoder block's feedforward network: dim 40-->512--->40
-            dropout=0.4, 
+            dropout=0.3, 
             activation='relu'
         )
         
@@ -37,6 +37,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
             nn.Dropout(p=0.3),
+            
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
                 in_channels=16, 
@@ -48,7 +49,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
-            nn.Dropout(p=0.3), 
+            nn.Dropout(p=0.3),
             
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
@@ -62,6 +63,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.BatchNorm2d(64),
             nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3))
+        
         ############### 2ND PARALLEL 2D CONVOLUTION BLOCK ############
         # 3 sequential conv2D layers: (1,40,282) --> (16, 20, 141) -> (32, 5, 35) -> (64, 1, 8)
         self.conv2Dblock2 = nn.Sequential(
@@ -106,13 +108,8 @@ class TransformerCNNNetwork(nn.Module):
             nn.Dropout(p=0.3))
         
         ################# FINAL LINEAR BLOCK ####################
-        # Linear softmax layer to take final concatenated embedding tensor 
-        # from parallel 2D convolutional blocks, output 6 logits 
-        # Each full convolution block outputs (64*1*4) embedding flattened to dim 256 1D array 
-        # Full transformer block outputs 40*21 feature map, which we time-avg to dim 40 1D array
-        # 256*2 == 512 input features --> 6 output emotions 
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*5)*2)+40,
+                            in_features = ((64*1*15)*2)+40,
                             out_features = 6
                             ) 
         
@@ -120,15 +117,11 @@ class TransformerCNNNetwork(nn.Module):
         self.softmax_out = nn.Softmax(dim=1) # dim==1 is the freq embedding
 
     def forward(self, input_data):
-        # create final feature embedding from 1st convolutional layer 
-        # input features pased through 4 sequential 2D convolutional layers
         conv2d_embedding1 = self.conv2Dblock1(input_data)
         conv2d_embedding1 = torch.flatten(conv2d_embedding1, start_dim=1)
         conv2d_embedding2 = self.conv2Dblock2(input_data)
         conv2d_embedding2 = torch.flatten(conv2d_embedding2, start_dim=1) 
 
-        ########## 4-encoder-layer Transformer block w/ 40-->512-->40 feedfwd network ##############
-        # maxpool input feature map: 1*40*87 w/ 1*4 kernel --> 1*40*21
         x_maxpool = self.transformer_maxpool(input_data)
 
         # remove channel dim: 1*40*21 --> 40*21
@@ -155,4 +148,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 216))
+    summary(model, (1, 40, 350))

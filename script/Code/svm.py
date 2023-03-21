@@ -24,7 +24,7 @@ def reverse_label_encoder(data):
 def main():
     SAMPLE_RATE = 48000
     NUM_SAMPLE = 22050
-    DURATION = 3.07
+    DURATION = 5.27
     train_path = "../dataset/train_RAVDESS/"
     test_path = "../dataset/test_RAVDESS/"
 
