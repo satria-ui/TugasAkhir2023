@@ -88,7 +88,7 @@ class TransformerCNNNetwork(nn.Module):
                 kernel_size=3,
                 stride=1,
                 padding=1
-                      ),
+                      ),    
             nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
