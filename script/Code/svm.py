@@ -22,11 +22,11 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
-    SAMPLE_RATE = 48000
+    SAMPLE_RATE = 16000
     NUM_SAMPLE = 22050
-    DURATION = 5.27
-    train_path = "../dataset/train_RAVDESS/"
-    test_path = "../dataset/test_RAVDESS/"
+    DURATION = 5
+    train_path = "../dataset/train_CREMA_85/"
+    test_path = "../dataset/test_CREMA_15/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()

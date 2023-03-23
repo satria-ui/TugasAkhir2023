@@ -34,7 +34,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path + audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
                 # waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
@@ -64,7 +64,8 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
             waveform_homo[:len(waveform)] = waveform
@@ -89,7 +90,7 @@ class CremaD:
         else:
             return "Wrong Audio Path"
 
-    def getWaveform(self):
+    def getWaveformCREMA(self):
         # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
         if os.path.isdir(self.path):
             counter = 0
@@ -101,7 +102,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
                 # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -130,7 +131,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
             # waveform_homo, _ = librosa.load(self.path, duration = self.target_duration)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -349,12 +350,12 @@ class CremaD:
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
-        waveforms_testing, emotions_testing = self.getWaveformRavdess()
+        waveforms_testing, emotions_testing = self.getWaveformCREMA()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
         # waveforms_training, emotions_training = self.getWaveform()
-        waveforms_training, emotions_training = self.getWaveformRavdess()
+        waveforms_training, emotions_training = self.getWaveformCREMA()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -363,7 +364,7 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.1, random_state=123, stratify=emotions_training)
+        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.10, random_state=123, stratify=emotions_training)
         X_test = waveforms_testing
         y_test = emotions_testing
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
@@ -459,7 +460,7 @@ class CremaD:
         return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
-        waveform, emotion_idx = self.getWaveformRavdess()
+        waveform, emotion_idx = self.getWaveformCREMA()
         waveform_np = np.array(waveform, dtype=np.float64)
         emotion_np = np.array(emotion_idx, dtype=int)
         
@@ -712,22 +713,15 @@ class Transformation:
             ).to(self.device)
         return mfcc_transform
     
-    # def feature_mfcc(waveform, sample_rate, winlen=512, window='hamming', n_mels=40, n_mfcc=20, hop_length=256):
-    #     # Preprocessing: pad waveform with zeros to be at least 1 second long
-    #     waveform = librosa.util.fix_length(waveform, size = sample_rate)
-    #     # Compute MFCCs
-    #     mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mels=n_mels, n_mfcc=n_mfcc,
-    #                                 win_length=winlen, window=window, hop_length=hop_length)
-    #     return mfcc
     def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):
         mfc_coefficients=librosa.feature.mfcc(
                             y=waveform, 
                             sr=sample_rate, 
                             n_mfcc=n_mfcc,
                             n_fft=fft, 
-                            win_length=winlen, 
+                            win_length=winlen, # fft//2
                             window=window, 
-                            #hop_length=hop, 
+                            hop_length=winlen//4, # winlen//4
                             n_mels=mels, 
                             fmax=sample_rate/2) 
         return mfc_coefficients
