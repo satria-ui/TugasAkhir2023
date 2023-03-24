@@ -34,7 +34,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path + audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
                 # waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
@@ -64,7 +64,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
             # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -102,7 +102,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
                 # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -131,7 +131,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
             # waveform_homo, _ = librosa.load(self.path, duration = self.target_duration)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -364,7 +364,7 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.10, random_state=123, stratify=emotions_training)
+        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.05, random_state=123, stratify=emotions_training)
         X_test = waveforms_testing
         y_test = emotions_testing
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
@@ -719,9 +719,9 @@ class Transformation:
                             sr=sample_rate, 
                             n_mfcc=n_mfcc,
                             n_fft=fft, 
-                            win_length=winlen, # fft//2
+                            win_length=winlen, #fft//2
                             window=window, 
-                            hop_length=winlen//4, # winlen//4
+                            # hop_length=512, #winlen//4
                             n_mels=mels, 
                             fmax=sample_rate/2) 
         return mfc_coefficients
