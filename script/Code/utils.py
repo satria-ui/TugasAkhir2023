@@ -34,8 +34,8 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path + audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
-                # waveform, _ = librosa.load(self.path+audio)
+                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
+                waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -64,11 +64,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
-            # waveform_homo, _ = librosa.load(self.path, sr=None)
+            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = int(self.path.split("-")[2])
 
@@ -102,8 +102,8 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
-                # waveform, _ = librosa.load(self.path+audio)
+                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+                waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
                 waveform_homo[:len(waveform)] = waveform
@@ -131,11 +131,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
-            # waveform_homo, _ = librosa.load(self.path, duration = self.target_duration)
+            # waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = self.path.split("_")
 
@@ -265,7 +265,7 @@ class CremaD:
 
         # plt.figure(figsize=(15,4), facecolor=(.9,.9,.9))
         plt.figure(figsize=(4,2))
-        plt.title(emotion, size=8)
+        plt.title(emotion, size=9)
 
         if title == "Waveform":
             plt.xlabel('Time (s)', fontsize=8)
@@ -286,8 +286,9 @@ class CremaD:
             cbar.ax.tick_params(labelsize=8)
         
         elif title == "MFCC":
-            plt.xlabel('Frame')
-            plt.ylabel('MFCC Coefficients')
+            plt.xlabel('Frame', fontsize=8)
+            plt.xticks(fontsize=8)
+            plt.ylabel('MFCC Coefficients', fontsize=8)
 
             waveform_np = np.array(waveform, dtype=np.float64)
             m = 1
@@ -304,8 +305,9 @@ class CremaD:
             print(f'Features (MFC coefficient matrix) shape: {len(features_train[0])} mel frequency coefficients x {len(features_train[0][1])} time steps')
 
             librosa.display.specshow(features2d, x_axis='frames', cmap='viridis')
-            plt.gca().set_ylabel('MFCC Coefficients', labelpad=10)
-            plt.colorbar(format="%+2.f dB")
+            plt.gca().set_ylabel('MFCC Coefficients', labelpad=5)
+            cbar = plt.colorbar(format="%+2.f dB")
+            cbar.ax.tick_params(labelsize=8)
             plt.tight_layout()
         
         return plt.show()
