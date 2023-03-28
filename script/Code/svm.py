@@ -22,11 +22,11 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
-    SAMPLE_RATE = 16000
+    SAMPLE_RATE = 48000
     NUM_SAMPLE = 22050
     DURATION = 5
-    train_path = "../dataset/train_CREMA_85/"
-    test_path = "../dataset/test_CREMA_15/"
+    train_path = "../dataset/train_RAVDESS_90/"
+    test_path = "../dataset/test_RAVDESS_10/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
@@ -52,8 +52,7 @@ def main():
 
     ############################## GridSearching ##############################
     # # {'C': 10, 'gamma': 0.01, 'kernel': 'rbf', 'probability': True}
-    # param_grid = {'C': [0.001, 0.01, 0.1, 1, 3, 5, 7, 10, 100], 'gamma': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False], 'class_weight': [None, 'balanced'],
-    #           'shrinking': [True, False], 'degree': [2,3,4]}
+    # param_grid = {'C': [0.001, 0.01, 0.1, 1, 3, 5, 7, 10], 'gamma': [0.0001, 0.001, 0.01, 0.1, 1,'scale', 'auto'],'kernel': ['linear', 'rbf', 'poly', 'sigmoid'], 'probability':[True, False]}
 
     # grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=2)
     # grid.fit(X_train_scaled,y_train)

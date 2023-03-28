@@ -33,9 +33,9 @@ class CremaD:
             directory_path = [item for item in items if os.path.isfile(os.path.join(self.path, item))]
 
             for audio in directory_path:
-                audio_path.append(self.path + audio)
-                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.8)
-                waveform, _ = librosa.load(self.path+audio)
+                # audio_path.append(self.path + audio)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                # waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -64,11 +64,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
-            waveform_homo, _ = librosa.load(self.path, sr=None)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            # waveform_homo[:len(waveform)] = waveform
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
 
             emotion = int(self.path.split("-")[2])
 
@@ -102,8 +102,8 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                # waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
-                waveform, _ = librosa.load(self.path+audio)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
                 waveform_homo[:len(waveform)] = waveform
@@ -131,11 +131,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            # waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
-            waveform_homo, _ = librosa.load(self.path, sr=None)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
+            # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            # waveform_homo[:len(waveform)] = waveform
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
 
             emotion = self.path.split("_")
 
@@ -352,12 +352,12 @@ class CremaD:
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
-        waveforms_testing, emotions_testing = self.getWaveformCREMA()
+        waveforms_testing, emotions_testing = self.getWaveformRavdess()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
         # waveforms_training, emotions_training = self.getWaveform()
-        waveforms_training, emotions_training = self.getWaveformCREMA()
+        waveforms_training, emotions_training = self.getWaveformRavdess()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -366,9 +366,9 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_train, X_valid, y_train, y_valid = train_test_split(waveforms_training, emotions_training, test_size=0.05, random_state=123, stratify=emotions_training)
-        X_test = waveforms_testing
-        y_test = emotions_testing
+        X_test, X_valid, y_test, y_valid = train_test_split(waveforms_testing, emotions_testing, test_size=0.5, random_state=123, stratify=emotions_testing)
+        X_train = waveforms_training
+        y_train = emotions_training
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
         (unique_valid, counts_valid) = np.unique(y_valid, return_counts=True)
         (unique_test, counts_test) = np.unique(y_test, return_counts=True)
@@ -462,7 +462,7 @@ class CremaD:
         return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
-        waveform, emotion_idx = self.getWaveformCREMA()
+        waveform, emotion_idx = self.getWaveformRavdess()
         waveform_np = np.array(waveform, dtype=np.float64)
         emotion_np = np.array(emotion_idx, dtype=int)
         
@@ -527,17 +527,44 @@ class DeepLearning:
     def train(self, train_file, model, num_epochs):
         CMD = CremaD(path="./dataset/", sample_rate=self.target_sample_rate, duration=self.target_duration, num_samples=22050)
         X_train, X_valid, X_test, y_train, y_valid, y_test = CMD.load_readyToTrain_data(train_file)
+
         train_size = X_train.shape[0]
         minibatch = 32
+        ######################### FOR CRNN #########################
+        # def find_diff(img_height, img_width):
+        #     remainder_height = img_height % 16
+        #     if remainder_height == 0:
+        #         diff_height = 0
+        #     else:
+        #         diff_height = 16 - remainder_height
+
+        #     remainder_width = img_width % 4
+        #     if remainder_width == 0:
+        #         diff_width = 0
+        #     else:
+        #         diff_width = 4 - remainder_width
+
+        #     return diff_height, diff_width
+        
+        # img_height = X_train.shape[2]
+        # img_width = X_train.shape[3]
+        # diff_height, diff_width = find_diff(img_height, img_width)
+
+        # X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        # X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        # print(X_train.shape, X_valid.shape)
+        ######################### FOR CRNN #########################
+            # X = torch.nn.functional.pad(X, (0, diff_width, 0, diff_height, 0, 0, 0, 0), mode='constant', value=0)
 
         print(f'\n{self.device} selected')
 
         # instantiate model and move to GPU for training
-        model = model().to(self.device) 
+        model = model.to(self.device) 
         optimizer = torch.optim.SGD(model.parameters(),lr=0.001, weight_decay=0.001, momentum=0.8)
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         criterion = nn.CrossEntropyLoss()
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
+        # early_stopping = EarlyStopping(tolerance=5, min_delta=0)
         print('Number of trainable params: ',sum(p.numel() for p in model.parameters()))
 
         # instantiate the checkpoint save function
@@ -601,8 +628,8 @@ class DeepLearning:
                 
                 # keep track of the iteration to see if the model's too slow
                 print('\r'+f'Epoch {epoch+1}: iteration {i}/{num_iterations}',end='')
-            
-            # scheduler.step(epoch_loss)
+
+            scheduler.step(epoch_loss)
             # create tensors from validation set
             X_valid_tensor = torch.tensor(X_valid,device=self.device).float()
             Y_valid_tensor = torch.tensor(y_valid,dtype=torch.long,device=self.device)
@@ -619,6 +646,12 @@ class DeepLearning:
             # Save checkpoint of the model
             checkpoint_filename = './Checkpoint/cnnModel-{:03d}.pkl'.format(epoch+1)
             save_checkpoint(optimizer, model, epoch, checkpoint_filename)
+
+            # # early stopping
+            # early_stopping(epoch_loss, valid_loss)
+            # if early_stopping.early_stop:
+            #     print("We are at epoch:", epoch)
+            #     break
             
             # keep track of each epoch's progress
             print(f'\nEpoch {epoch+1} --- loss:{epoch_loss:.2f}, Epoch accuracy:{epoch_acc:.2f}%, Validation loss:{valid_loss:.2f}, Validation accuracy:{valid_acc:.2f}%')
@@ -684,6 +717,19 @@ class DeepLearning:
         if optimizer is not None:
             optimizer.load_state_dict(checkpoint_dict['optimizer'])
         return epoch
+
+# class EarlyStopping:
+#     def __init__(self, tolerance=5, min_delta=0):
+#         self.tolerance = tolerance
+#         self.min_delta = min_delta
+#         self.counter = 0
+#         self.early_stop = False
+
+#     def __call__(self, train_loss, validation_loss):
+#         if (validation_loss - train_loss) > self.min_delta:
+#             self.counter +=1
+#             if self.counter >= self.tolerance:  
+#                 self.early_stop = True
 
 class Transformation:
     def __init__(self, sr, device):
