@@ -102,7 +102,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
                 # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -131,7 +131,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
             # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -352,12 +352,12 @@ class CremaD:
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
-        waveforms_testing, emotions_testing = self.getWaveformRavdess()
+        waveforms_testing, emotions_testing = self.getWaveformCREMA()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
         # waveforms_training, emotions_training = self.getWaveform()
-        waveforms_training, emotions_training = self.getWaveformRavdess()
+        waveforms_training, emotions_training = self.getWaveformCREMA()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -431,10 +431,10 @@ class CremaD:
 
         # check shape of each set again
         print(f'\nShape of 4D feature array for input tensor: {X_train.shape} train, {X_valid.shape} validation, {X_test.shape} test')
-        joblib.dump(scaler, "./Scaler/CNNScaler.joblib")
+        joblib.dump(scaler, "./Scaler/LeNetScaler.joblib")
 
         #################### SAVE READY TO TRAIN DATA ####################
-        filename = "./Scaler/CREMA-D_ready_data.npy"
+        filename = "./Scaler/CREMA-D_ready_data_LeNet.npy"
         with open(filename, 'wb') as f:
             np.save(f, X_train)
             np.save(f, X_valid)
@@ -462,7 +462,7 @@ class CremaD:
         return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
-        waveform, emotion_idx = self.getWaveformRavdess()
+        waveform, emotion_idx = self.getWaveformCREMA()
         waveform_np = np.array(waveform, dtype=np.float64)
         emotion_np = np.array(emotion_idx, dtype=int)
         
