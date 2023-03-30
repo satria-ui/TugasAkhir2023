@@ -10,51 +10,47 @@ class TransformerCNNNetwork(nn.Module):
         self.transformer_maxpool = nn.MaxPool2d(kernel_size=[1,4], stride=[1,4])
         
         # define single transformer encoder layer
-        # 4 multi-head self-attention layers each with 40-->512--->40 feedforward network
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=40, # input feature (frequency) dim after maxpooling 40*87 -> 40*21 (MFC*time)
-            nhead=8, # 8 self-attention layers in each multi-head self-attention layer in each encoder block
-            dim_feedforward=512, # 2 linear layers in each encoder block's feedforward network: dim 40-->512--->40
+            d_model=40,
+            nhead=8, 
+            dim_feedforward=512, 
             dropout=0.3, 
             activation='relu'
         )
-        
-        # Complete transformer block contains 4 full transformer encoder layers (each w/ multihead self-attention+feedforward)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
 
         ############### 1ST PARALLEL 2D CONVOLUTION BLOCK ############
-        # 3 sequential conv2D layers: (1,40,282) --> (16, 20, 141) -> (32, 5, 35) -> (64, 1, 8)
         self.conv2Dblock1 = nn.Sequential(
             # 1st 2D convolution layer
             nn.Conv2d(
-                in_channels=1, # input volume depth == input channel dim == 1
-                out_channels=16, # expand output feature map volume's depth to 16
-                kernel_size=3, # typical 3*3 stride 1 kernel
+                in_channels=1,
+                out_channels=16, 
+                kernel_size=3,
                 stride=1,
                 padding=1
                       ),
-            nn.ELU(), # feature map --> activation map
+            nn.ELU(), 
             nn.BatchNorm2d(16),
-            nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
+            nn.MaxPool2d(kernel_size=2, stride=2), 
             nn.Dropout(p=0.3),
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
                 in_channels=16, 
-                out_channels=32, # expand output feature map volume's depth to 32
+                out_channels=32, 
                 kernel_size=3,
                 stride=1,
                 padding=1
                       ),
             nn.ELU(),
             nn.BatchNorm2d(32),
-            nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
+            nn.MaxPool2d(kernel_size=4, stride=4), 
             nn.Dropout(p=0.3),
             
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
                 in_channels=32,
-                out_channels=64, # expand output feature map volume's depth to 64
+                out_channels=64, 
                 kernel_size=3,
                 stride=1,
                 padding=1
@@ -65,39 +61,36 @@ class TransformerCNNNetwork(nn.Module):
             nn.Dropout(p=0.3))
         
         ############### 2ND PARALLEL 2D CONVOLUTION BLOCK ############
-        # 3 sequential conv2D layers: (1,40,282) --> (16, 20, 141) -> (32, 5, 35) -> (64, 1, 8)
         self.conv2Dblock2 = nn.Sequential(
-
             # 1st 2D convolution layer
             nn.Conv2d(
-                in_channels=1, # input volume depth == input channel dim == 1
-                out_channels=16, # expand output feature map volume's depth to 16
-                kernel_size=3, # typical 3*3 stride 1 kernel
+                in_channels=1, 
+                out_channels=16, 
+                kernel_size=3, 
                 stride=1,
                 padding=1
                       ),
-            nn.BatchNorm2d(16), # batch normalize the output feature map before activation
-            nn.ELU(), # feature map --> activation map
-            nn.MaxPool2d(kernel_size=2, stride=2), #typical maxpool kernel size
-            nn.Dropout(p=0.3), #randomly zero 30% of 1st layer's output feature map in training
+            nn.ELU(),
+            nn.BatchNorm2d(16),
+            nn.MaxPool2d(kernel_size=2, stride=2), 
+            nn.Dropout(p=0.3),
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
                 in_channels=16, 
-                out_channels=32, # expand output feature map volume's depth to 32
+                out_channels=32,
                 kernel_size=3,
                 stride=1,
                 padding=1
                       ),    
             nn.ELU(),
             nn.BatchNorm2d(32),
-            nn.MaxPool2d(kernel_size=4, stride=4), # increase maxpool kernel for subsequent filters
+            nn.MaxPool2d(kernel_size=4, stride=4),
             nn.Dropout(p=0.3), 
-            
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
                 in_channels=32,
-                out_channels=64, # expand output feature map volume's depth to 64
+                out_channels=64,
                 kernel_size=3,
                 stride=1,
                 padding=1
@@ -109,7 +102,7 @@ class TransformerCNNNetwork(nn.Module):
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*19)*2)+40,
+                            in_features = ((64*1*2)*2)+40,
                             out_features = 6
                             ) 
         
@@ -148,4 +141,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 157))
+    summary(model, (1, 40, 80))
