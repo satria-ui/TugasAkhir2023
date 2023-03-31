@@ -102,7 +102,7 @@ class CremaD:
 
             for audio in directory_path:
                 audio_path.append(self.path+audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
                 # waveform, _ = librosa.load(self.path+audio)
                 # make sure waveform vectors are homogenous by defining explicitly
                 waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -131,7 +131,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate, offset=0.3)
+            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
             # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -352,12 +352,12 @@ class CremaD:
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
-        waveforms_testing, emotions_testing = self.getWaveformCREMA()
+        waveforms_testing, emotions_testing = self.getWaveformRavdess()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
         # waveforms_training, emotions_training = self.getWaveform()
-        waveforms_training, emotions_training = self.getWaveformCREMA()
+        waveforms_training, emotions_training = self.getWaveformRavdess()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -431,10 +431,10 @@ class CremaD:
 
         # check shape of each set again
         print(f'\nShape of 4D feature array for input tensor: {X_train.shape} train, {X_valid.shape} validation, {X_test.shape} test')
-        joblib.dump(scaler, "./Scaler/LeNetScaler.joblib")
+        joblib.dump(scaler, "./Scaler/CRNNScaler.joblib")
 
         #################### SAVE READY TO TRAIN DATA ####################
-        filename = "./Scaler/CREMA-D_ready_data_LeNet.npy"
+        filename = "./Scaler/CREMA-D_ready_data_CRNN.npy"
         with open(filename, 'wb') as f:
             np.save(f, X_train)
             np.save(f, X_valid)
@@ -531,28 +531,28 @@ class DeepLearning:
         train_size = X_train.shape[0]
         minibatch = 32
         ######################### FOR CRNN #########################
-        # def find_diff(img_height, img_width):
-        #     remainder_height = img_height % 16
-        #     if remainder_height == 0:
-        #         diff_height = 0
-        #     else:
-        #         diff_height = 16 - remainder_height
+        def find_diff(img_height, img_width):
+            remainder_height = img_height % 16
+            if remainder_height == 0:
+                diff_height = 0
+            else:
+                diff_height = 16 - remainder_height
 
-        #     remainder_width = img_width % 4
-        #     if remainder_width == 0:
-        #         diff_width = 0
-        #     else:
-        #         diff_width = 4 - remainder_width
+            remainder_width = img_width % 4
+            if remainder_width == 0:
+                diff_width = 0
+            else:
+                diff_width = 4 - remainder_width
 
-        #     return diff_height, diff_width
+            return diff_height, diff_width
         
-        # img_height = X_train.shape[2]
-        # img_width = X_train.shape[3]
-        # diff_height, diff_width = find_diff(img_height, img_width)
+        img_height = X_train.shape[2]
+        img_width = X_train.shape[3]
+        diff_height, diff_width = find_diff(img_height, img_width)
 
-        # X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        # X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        # print(X_train.shape, X_valid.shape)
+        X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        print(X_train.shape, X_valid.shape)
         ######################### FOR CRNN #########################
             # X = torch.nn.functional.pad(X, (0, diff_width, 0, diff_height, 0, 0, 0, 0), mode='constant', value=0)
 
@@ -560,10 +560,10 @@ class DeepLearning:
 
         # instantiate model and move to GPU for training
         model = model.to(self.device) 
-        optimizer = torch.optim.SGD(model.parameters(),lr=0.001, weight_decay=0.001, momentum=0.8)
+        optimizer = torch.optim.SGD(model.parameters(),lr=0.01, weight_decay=0.001, momentum=0.8)
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         criterion = nn.CrossEntropyLoss()
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
         # early_stopping = EarlyStopping(tolerance=5, min_delta=0)
         print('Number of trainable params: ',sum(p.numel() for p in model.parameters()))
 
@@ -629,7 +629,7 @@ class DeepLearning:
                 # keep track of the iteration to see if the model's too slow
                 print('\r'+f'Epoch {epoch+1}: iteration {i}/{num_iterations}',end='')
 
-            scheduler.step(epoch_loss)
+            # scheduler.step(epoch_loss)
             # create tensors from validation set
             X_valid_tensor = torch.tensor(X_valid,device=self.device).float()
             Y_valid_tensor = torch.tensor(y_valid,dtype=torch.long,device=self.device)

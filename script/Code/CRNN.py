@@ -29,6 +29,8 @@ class CRNN(nn.Module):
         img_height = img_height + height_pad
         img_width = img_width + width_pad
 
+        # print(img_height, img_width)  
+
         # img_height = np.pad(img_height, (0,height_pad), mode='constant', constant_values=0)
         # img_width = np.pad(img_width, (0,width_pad), mode="constant", constant_values=0)
 
@@ -120,6 +122,6 @@ class CRNN(nn.Module):
         return output_logits, output_softmax  # shape: (seq_len, batch, num_class)
     
 if __name__ == "__main__":
-    crnn = CRNN(img_channel=1, img_height=40, img_width=80, num_class=6)
+    crnn = CRNN(img_channel=1, img_height=40, img_width=216, num_class=6)
     model = crnn.to("cuda")
-    summary(model, (1, 48, 80))
+    summary(model, (1, 48, 288))
