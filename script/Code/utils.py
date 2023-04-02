@@ -366,7 +366,7 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_test, X_valid, y_test, y_valid = train_test_split(waveforms_testing, emotions_testing, test_size=0.5, random_state=123, stratify=emotions_testing)
+        X_test, X_valid, y_test, y_valid = train_test_split(waveforms_testing, emotions_testing, test_size=0.5, random_state=23, stratify=emotions_testing)
         X_train = waveforms_training
         y_train = emotions_training
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
