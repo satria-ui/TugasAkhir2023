@@ -26,7 +26,6 @@ class CremaD:
     def getWaveformRavdess(self):
         if os.path.isdir(self.path):
             counter = 0
-            audio_path = []
             audio_waveforms = []
             audio_emotion = []
             items = os.listdir(self.path)
@@ -89,6 +88,79 @@ class CremaD:
             return waveform_homo, audio_emotion
         else:
             return "Wrong Audio Path"
+
+    def getWaveformSAVEE(self):
+        if os.path.isdir(self.path):
+            counter = 0
+            audio_path = []
+            audio_waveforms = []
+            audio_emotion = []
+            items = os.listdir(self.path)
+            directory_path = [item for item in items if os.path.isfile(os.path.join(self.path, item))]
+
+            for audio in directory_path:
+                # audio_path.append(self.path + audio)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                # waveform, _ = librosa.load(self.path+audio)
+
+                # make sure waveform vectors are homogenous by defining explicitly
+                waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+                waveform_homo[:len(waveform)] = waveform
+                
+                audio_waveforms.append(waveform_homo)
+
+                # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+                if audio[-8:-6]=='_a':
+                    audio_emotion.append(0)
+                elif audio[-8:-6]=='_d':
+                    audio_emotion.append(2)
+                elif audio[-8:-6]=='_f':
+                    audio_emotion.append(1)
+                elif audio[-8:-6]=='_h':
+                    audio_emotion.append(3)
+                elif audio[-8:-6]=='_n':
+                    audio_emotion.append(4)
+                elif audio[-8:-6]=='sa':
+                    audio_emotion.append(5)
+                elif audio[-8:-6]=='su':
+                    audio_emotion.append('surprise')
+                else:
+                    audio_emotion.append('error') 
+
+                counter += 1
+                print('\r'+f' Processed {counter}/{len(directory_path)} audio waveforms',end='')
+            
+            return audio_waveforms, audio_emotion
+        
+        elif os.path.isfile(self.path):
+            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
+            # make sure waveform vectors are homogenous by defining explicitly
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
+
+            emotion = str(self.path)
+            # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
+            if emotion[-8:-6]=='_a':
+                audio_emotion = int(0)
+            elif emotion[-8:-6]=='_d':
+                audio_emotion = int(2)
+            elif emotion[-8:-6]=='_f':
+                audio_emotion = int(1)
+            elif emotion[-8:-6]=='_h':
+                audio_emotion = int(3)
+            elif emotion[-8:-6]=='_n':
+                audio_emotion = int(4)
+            elif emotion[-8:-6]=='sa':
+                audio_emotion = int(5)
+            elif emotion[-8:-6]=='su':
+                audio_emotion = ('surprise')
+            else:
+                audio_emotion.append('error')   
+            
+            return waveform_homo, audio_emotion
+        else:
+            return "Wrong Audio Path"         
 
     def getWaveformCREMA(self):
         # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
@@ -155,6 +227,7 @@ class CremaD:
             return waveform_homo, audio_emotion
         else:
             return "Wrong Audio Path"
+    
     def getDataRavdess(self):
         if os.path.isdir(self.path):
             file_emotion = []
@@ -175,6 +248,43 @@ class CremaD:
             return Ravdess_df
         else:
             return "Wrong audio path"
+    
+    def getDataSavee(self):
+        if os.path.isdir(self.path):
+            file_emotion = []
+            file_path = []
+
+            items = os.listdir(self.path)
+
+            for i in items:
+                if i[-8:-6]=='_a':
+                    file_emotion.append('angry')
+                elif i[-8:-6]=='_d':
+                    file_emotion.append('disgust')
+                elif i[-8:-6]=='_f':
+                    file_emotion.append('fear')
+                elif i[-8:-6]=='_h':
+                    file_emotion.append('happy')
+                elif i[-8:-6]=='_n':
+                    file_emotion.append('neutral')
+                elif i[-8:-6]=='sa':
+                    file_emotion.append('sad')
+                elif i[-8:-6]=='su':
+                    file_emotion.append('surprise')
+                else:
+                    file_emotion.append('error') 
+                file_path.append(self.path + i)
+
+
+            path_df = pd.DataFrame(file_path, columns=['Path'])
+            emotion_df = pd.DataFrame(file_emotion, columns=['Emotions'])
+            SAVEE_df = pd.concat([path_df, emotion_df], axis=1)
+            # remove surprise emotion
+            SAVEE_df.drop(SAVEE_df.loc[SAVEE_df['Emotions']=="surprise"].index, inplace=True)
+            SAVEE_df.reset_index(drop=True, inplace=True)
+            return SAVEE_df
+        else:
+            return "Wrong Audio Path"
 
     def getData(self):
         if os.path.isdir(self.path):
@@ -251,7 +361,7 @@ class CremaD:
 
     def plot(self, title):
         if os.path.isfile(self.path):
-            waveform, emotion_idx = self.getWaveformRavdess()
+            waveform, emotion_idx = self.getWaveformSAVEE()
         else:
             return "Please select single file of audio"
         
@@ -327,7 +437,7 @@ class CremaD:
 
     def play_audio(self):
         if os.path.isfile(self.path):
-            waveform, _ = self.getWaveformRavdess()
+            waveform, _ = self.getWaveformSAVEE()
         else:
             return "Please select single file of audio"
         
