@@ -764,7 +764,7 @@ class DeepLearning:
             #     break
             
             # keep track of each epoch's progress
-            print(f'\nEpoch {epoch+1} --- loss:{epoch_loss:.2f}, Epoch accuracy:{epoch_acc:.2f}%, Validation loss:{valid_loss:.2f}, Validation accuracy:{valid_acc:.2f}%')
+            print(f'\nEpoch {epoch+1} --- loss:{epoch_loss:.3f}, Epoch accuracy:{epoch_acc:.2f}%, Validation loss:{valid_loss:.3f}, Validation accuracy:{valid_acc:.2f}%')
         print("Finished.")
         return train_losses, valid_losses, train_accuracy, valid_accuracy
     

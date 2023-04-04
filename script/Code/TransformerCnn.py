@@ -14,8 +14,8 @@ class TransformerCNNNetwork(nn.Module):
             d_model=40,
             nhead=8, 
             dim_feedforward=512, 
-            dropout=0.3, 
-            activation='relu'
+            activation='relu',
+            dropout=0.4
         )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
 
@@ -32,6 +32,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(), 
             nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(p=0.3),
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
@@ -44,6 +45,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4),
+            nn.Dropout(p=0.3),
             
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
@@ -55,7 +57,8 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(64),
-            nn.MaxPool2d(kernel_size=4, stride=4))
+            nn.MaxPool2d(kernel_size=4, stride=4),
+            nn.Dropout(p=0.3))
         
         ############### 2ND PARALLEL 2D CONVOLUTION BLOCK ############
         self.conv2Dblock2 = nn.Sequential(
@@ -69,7 +72,8 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(16),
-            nn.MaxPool2d(kernel_size=2, stride=2), 
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(p=0.3), 
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
@@ -82,6 +86,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(),
             nn.BatchNorm2d(32),
             nn.MaxPool2d(kernel_size=4, stride=4), 
+            nn.Dropout(p=0.3),
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
                 in_channels=32,
@@ -92,11 +97,12 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(64),
-            nn.MaxPool2d(kernel_size=4, stride=4))
+            nn.MaxPool2d(kernel_size=4, stride=4),
+            nn.Dropout(p=0.3))
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*5)*2)+40,
+                            in_features = ((64*1*19)*2)+40,
                             out_features = 6
                             ) 
         
@@ -135,4 +141,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 141))
+    summary(model, (1, 40, 615))

@@ -22,11 +22,11 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
-    SAMPLE_RATE = 22050
+    SAMPLE_RATE = 44100
     NUM_SAMPLE = 22050
-    DURATION = 3.84
-    train_path = "../dataset/train_SAVEE_80/"
-    test_path = "../dataset/test_SAVEE_20/"
+    DURATION = 7.14
+    train_path = "../dataset/train_SAVEE_70/"
+    test_path = "../dataset/test_SAVEE_30/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
@@ -97,7 +97,7 @@ def main():
     print("The Model's Prediction ")
     print("<<<===========================================>>>")
     df = pd.DataFrame({'Actual': y_test_str, 'Predict': y_pred_str})
-    print(df[41:61])
+    print(df[:20])
 
 if __name__ == '__main__':
     main()
