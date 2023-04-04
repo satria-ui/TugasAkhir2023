@@ -22,11 +22,11 @@ def reverse_label_encoder(data):
     return [reverse_mapping_dict[label] for label in data]
 
 def main():
-    SAMPLE_RATE = 16000
+    SAMPLE_RATE = 22050
     NUM_SAMPLE = 22050
-    DURATION = 5
-    train_path = "../dataset/train_CREMA_90/"
-    test_path = "../dataset/test_CREMA_10/"
+    DURATION = 3.84
+    train_path = "../dataset/train_SAVEE_80/"
+    test_path = "../dataset/test_SAVEE_20/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
@@ -43,7 +43,7 @@ def main():
 
     print("Creating Scaler...")
     scaler = StandardScaler().fit(X_train)
-    joblib.dump(scaler, '../Scaler/SVMScalerCrema.joblib')
+    joblib.dump(scaler, '../Scaler/SVMScalerSavee.joblib')
     print(f"Mean: {scaler.mean_}\n")
     print(f"Scale: {scaler.scale_}")
 
@@ -78,7 +78,7 @@ def main():
     SVM_model = svm.SVC(C=10, gamma=0.01, kernel='rbf', probability=True)
     SVM_model.fit(X_train_scaled, y_train)
     print("Saving Model...")
-    filename = '../ML_Model/svm_model_crema.sav'
+    filename = '../ML_Model/svm_model_savee.sav'
     pickle.dump(SVM_model, open(filename, 'wb'))
     print("Done.")
 

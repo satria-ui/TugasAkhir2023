@@ -31,8 +31,7 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(), 
             nn.BatchNorm2d(16),
-            nn.MaxPool2d(kernel_size=2, stride=2), 
-            nn.Dropout(p=0.3),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
@@ -44,8 +43,7 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(32),
-            nn.MaxPool2d(kernel_size=4, stride=4), 
-            nn.Dropout(p=0.3),
+            nn.MaxPool2d(kernel_size=4, stride=4),
             
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
@@ -57,8 +55,7 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(64),
-            nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=0.3))
+            nn.MaxPool2d(kernel_size=4, stride=4))
         
         ############### 2ND PARALLEL 2D CONVOLUTION BLOCK ############
         self.conv2Dblock2 = nn.Sequential(
@@ -73,7 +70,6 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(),
             nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2, stride=2), 
-            nn.Dropout(p=0.3),
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
@@ -85,8 +81,7 @@ class TransformerCNNNetwork(nn.Module):
                       ),    
             nn.ELU(),
             nn.BatchNorm2d(32),
-            nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=0.3), 
+            nn.MaxPool2d(kernel_size=4, stride=4), 
             # 3rd 2D convolution layer identical to last except output dim
             nn.Conv2d(
                 in_channels=32,
@@ -97,12 +92,11 @@ class TransformerCNNNetwork(nn.Module):
                       ),
             nn.ELU(),
             nn.BatchNorm2d(64),
-            nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=0.3))
+            nn.MaxPool2d(kernel_size=4, stride=4))
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*15)*2)+40,
+                            in_features = ((64*1*5)*2)+40,
                             out_features = 6
                             ) 
         
@@ -141,4 +135,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 469))
+    summary(model, (1, 40, 141))
