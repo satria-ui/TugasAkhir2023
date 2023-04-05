@@ -133,11 +133,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
-            # waveform_homo, _ = librosa.load(self.path, sr=None)
+            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = str(self.path)
             # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
@@ -389,8 +389,13 @@ class CremaD:
             plt.xticks(fontsize=8)
             plt.ylabel('Frequency', fontsize=8)
             plt.yticks(fontsize=8)
-            spec = librosa.stft(waveform)
-            spec_db = librosa.amplitude_to_db(abs(spec))
+
+            # spec = librosa.feature.melspectrogram(y=waveform, sr=self.target_sample_rate, n_mels=1025)
+            # Compute logarithmic magnitude scale
+            # log_mel_spec = librosa.amplitude_to_db(mel_spec, ref=np.max)
+            stft = librosa.stft(waveform)
+            spec_db = librosa.amplitude_to_db(abs(stft))
+            print(spec_db.shape)
             librosa.display.specshow(spec_db, sr=self.target_sample_rate, x_axis='time', y_axis='log', cmap='plasma')
             cbar = plt.colorbar(format="%+2.f dB")
             cbar.ax.tick_params(labelsize=8)
@@ -572,7 +577,7 @@ class CremaD:
         return X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def extract_audio_svm(self):
-        waveform, emotion_idx = self.getWaveformSAVEE()
+        waveform, emotion_idx = self.getWaveformRavdess()
         waveform_np = np.array(waveform, dtype=np.float64)
         emotion_np = np.array(emotion_idx, dtype=int)
         
@@ -670,7 +675,7 @@ class DeepLearning:
 
         # instantiate model and move to GPU for training
         model = model.to(self.device) 
-        optimizer = torch.optim.SGD(model.parameters(),lr=0.001, weight_decay=0.001, momentum=0.8)
+        optimizer = torch.optim.SGD(model.parameters(),lr=0.0001, weight_decay=0.001, momentum=0.8)
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         criterion = nn.CrossEntropyLoss()
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
@@ -880,6 +885,8 @@ class Transformation:
             window=window,
             n_mels=mels,
             fmax=sample_rate/2)
+        # spec = librosa.stft(waveform)
+        # feature = librosa.amplitude_to_db(abs(spec))
         return feature
     
     def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):

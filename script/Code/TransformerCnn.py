@@ -11,7 +11,7 @@ class TransformerCNNNetwork(nn.Module):
         
         # define single transformer encoder layer
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=40,
+            d_model=128,
             nhead=8, 
             dim_feedforward=512, 
             activation='relu',
@@ -102,7 +102,7 @@ class TransformerCNNNetwork(nn.Module):
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*19)*2)+40,
+                            in_features = ((64*4*19)*2)+40,
                             out_features = 6
                             ) 
         
@@ -141,4 +141,4 @@ class TransformerCNNNetwork(nn.Module):
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
     model = cnn.to("cuda")
-    summary(model, (1, 40, 615))
+    summary(model, (1, 128, 615))
