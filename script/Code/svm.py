@@ -25,8 +25,8 @@ def main():
     SAMPLE_RATE = 44100
     NUM_SAMPLE = 22050
     DURATION = 7.14
-    train_path = "../dataset/train_SAVEE_70/"
-    test_path = "../dataset/test_SAVEE_30/"
+    train_path = "../dataset/train_SAVEE_90/"
+    test_path = "../dataset/test_SAVEE_10/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()

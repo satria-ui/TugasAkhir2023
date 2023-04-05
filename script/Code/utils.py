@@ -133,11 +133,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
-            waveform_homo, _ = librosa.load(self.path, sr=None)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            # waveform_homo[:len(waveform)] = waveform
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
 
             emotion = str(self.path)
             # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
@@ -449,7 +449,7 @@ class CremaD:
 
         # process each waveform individually to get its MFCCs
         for waveform in waveforms:
-            mfccs = Transformation.feature_mfcc(waveform, sample_rate)
+            mfccs = Transformation.feature_mel_spectrogram(waveform, sample_rate)
             features.append(mfccs)
             file_count += 1
             # print progress
@@ -870,6 +870,17 @@ class Transformation:
                 },
             ).to(self.device)
         return mfcc_transform
+    
+    def feature_mel_spectrogram(waveform, sample_rate, fft=1024, winlen=512, window='hamming', mels=128):
+        feature = librosa.feature.melspectrogram(
+            y = waveform,
+            sr = sample_rate,
+            n_fft = fft,
+            win_length=winlen,
+            window=window,
+            n_mels=mels,
+            fmax=sample_rate/2)
+        return feature
     
     def feature_mfcc(waveform, sample_rate, n_mfcc = 40, fft = 1024, winlen = 512, window='hamming', mels=128):
         mfc_coefficients=librosa.feature.mfcc(
