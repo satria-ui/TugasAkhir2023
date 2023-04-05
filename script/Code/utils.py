@@ -133,11 +133,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
-            # waveform_homo, _ = librosa.load(self.path, sr=None)
+            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = str(self.path)
             # label_mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
