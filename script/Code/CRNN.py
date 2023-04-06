@@ -122,6 +122,6 @@ class CRNN(nn.Module):
         return output_logits, output_softmax  # shape: (seq_len, batch, num_class)
     
 if __name__ == "__main__":
-    crnn = CRNN(img_channel=1, img_height=40, img_width=495, num_class=6)
+    crnn = CRNN(img_channel=1, img_height=40, img_width=331, num_class=6)
     model = crnn.to("cuda")
     summary(model, (1, 48, 288))
