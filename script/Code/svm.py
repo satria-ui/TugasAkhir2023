@@ -17,16 +17,20 @@ def manual_label_encoder(data):
     return encoded_data
 
 def reverse_label_encoder(data):
-    mapping = {'angry': 0, 'fear': 1, 'disgust': 2, 'happy': 3, 'neutral': 4, 'sad': 5}
-    reverse_mapping_dict = {v: k for k, v in mapping.items()}
-    return [reverse_mapping_dict[label] for label in data]
+    mapping = {0: "angry", 1: "fear", 2: "disgust", 3: "happy", 4: "neutral", 5: "sad",}
+    if type(data) == pd.core.series.Series:
+        encoded_data = data.map(mapping)
+    else:
+        encoded_data = [mapping[i] for i in data]
+
+    return encoded_data
 
 def main():
-    SAMPLE_RATE = 48000
+    SAMPLE_RATE = 22050
     NUM_SAMPLE = 22050
-    DURATION = 5.27
-    train_path = "../dataset/train_RAVDESS_80/"
-    test_path = "../dataset/test_RAVDESS_20/"
+    DURATION = 7.14
+    train_path = "../dataset/train_SAVEE_90/"
+    test_path = "../dataset/test_SAVEE_10/"
 
     print("Extracting Audio...\n")
     train_data = CremaD(path=train_path, sample_rate=SAMPLE_RATE, duration=DURATION, num_samples=NUM_SAMPLE).extract_audio_svm()
