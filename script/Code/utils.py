@@ -467,12 +467,12 @@ class CremaD:
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
-        waveforms_testing, emotions_testing = self.getWaveformCREMA()
+        waveforms_testing, emotions_testing = self.getWaveformRavdess()
         
         self.path = train_data
         print(f"\nPath is now {self.path}")
         # waveforms_training, emotions_training = self.getWaveform()
-        waveforms_training, emotions_training = self.getWaveformCREMA()
+        waveforms_training, emotions_training = self.getWaveformRavdess()
         
         #################### Split Train and Validation Data ####################
         print("\n\nSplitting train and validation data...\n")
@@ -481,7 +481,7 @@ class CremaD:
         waveforms_training = np.array(waveforms_training, dtype=np.float64)
         emotions_training = np.array(emotions_training, dtype=int)
 
-        X_test, X_valid, y_test, y_valid = train_test_split(waveforms_testing, emotions_testing, test_size=0.5, random_state=123, stratify=emotions_testing)
+        X_test, X_valid, y_test, y_valid = train_test_split(waveforms_testing, emotions_testing, test_size=0.5, random_state=12, stratify=emotions_testing)
         X_train = waveforms_training
         y_train = emotions_training
         (unique_train, counts_train) = np.unique(y_train, return_counts=True)
@@ -549,7 +549,7 @@ class CremaD:
         joblib.dump(scaler, "./Scaler/CRNNScaler.joblib")
 
         #################### SAVE READY TO TRAIN DATA ####################
-        filename = "./Scaler/CREMA-D_ready_data_CRNN.npy"
+        filename = "./Scaler/CREMA-D_ready_data.npy"
         with open(filename, 'wb') as f:
             np.save(f, X_train)
             np.save(f, X_valid)
@@ -646,28 +646,28 @@ class DeepLearning:
         train_size = X_train.shape[0]
         minibatch = 32
         ######################### FOR CRNN #########################
-        def find_diff(img_height, img_width):
-            remainder_height = img_height % 16
-            if remainder_height == 0:
-                diff_height = 0
-            else:
-                diff_height = 16 - remainder_height
+        # def find_diff(img_height, img_width):
+        #     remainder_height = img_height % 16
+        #     if remainder_height == 0:
+        #         diff_height = 0
+        #     else:
+        #         diff_height = 16 - remainder_height
 
-            remainder_width = img_width % 4
-            if remainder_width == 0:
-                diff_width = 0
-            else:
-                diff_width = 4 - remainder_width
+        #     remainder_width = img_width % 4
+        #     if remainder_width == 0:
+        #         diff_width = 0
+        #     else:
+        #         diff_width = 4 - remainder_width
 
-            return diff_height, diff_width
+        #     return diff_height, diff_width
         
-        img_height = X_train.shape[2]
-        img_width = X_train.shape[3]
-        diff_height, diff_width = find_diff(img_height, img_width)
+        # img_height = X_train.shape[2]
+        # img_width = X_train.shape[3]
+        # diff_height, diff_width = find_diff(img_height, img_width)
 
-        X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        print(X_train.shape, X_valid.shape)
+        # X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        # X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        # print(X_train.shape, X_valid.shape)
         ######################### FOR CRNN #########################
             # X = torch.nn.functional.pad(X, (0, diff_width, 0, diff_height, 0, 0, 0, 0), mode='constant', value=0)
 

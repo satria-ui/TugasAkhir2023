@@ -29,7 +29,7 @@ class LeNet(nn.Module):
             nn.ELU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
         
-        self.fc1_linear = nn.Linear(in_features = 16*7*17,out_features = 120) 
+        self.fc1_linear = nn.Linear(in_features = 16*7*84,out_features = 120) 
         self.fc2_linear = nn.Linear(in_features = 120,out_features = 84) 
         self.fc3_linear = nn.Linear(in_features = 84,out_features = 6) 
         
