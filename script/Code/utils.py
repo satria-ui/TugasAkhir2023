@@ -100,7 +100,7 @@ class CremaD:
 
             for audio in directory_path:
                 # audio_path.append(self.path + audio)
-                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate)
+                waveform, _ = librosa.load(self.path+audio, duration=self.target_duration, sr=self.target_sample_rate, offset=0.5)
                 # waveform, _ = librosa.load(self.path+audio)
 
                 # make sure waveform vectors are homogenous by defining explicitly
@@ -133,7 +133,7 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.5)
             # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
             waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
@@ -646,28 +646,28 @@ class DeepLearning:
         train_size = X_train.shape[0]
         minibatch = 32
         ######################### FOR CRNN #########################
-        # def find_diff(img_height, img_width):
-        #     remainder_height = img_height % 16
-        #     if remainder_height == 0:
-        #         diff_height = 0
-        #     else:
-        #         diff_height = 16 - remainder_height
+        def find_diff(img_height, img_width):
+            remainder_height = img_height % 16
+            if remainder_height == 0:
+                diff_height = 0
+            else:
+                diff_height = 16 - remainder_height
 
-        #     remainder_width = img_width % 4
-        #     if remainder_width == 0:
-        #         diff_width = 0
-        #     else:
-        #         diff_width = 4 - remainder_width
+            remainder_width = img_width % 4
+            if remainder_width == 0:
+                diff_width = 0
+            else:
+                diff_width = 4 - remainder_width
 
-        #     return diff_height, diff_width
+            return diff_height, diff_width
         
-        # img_height = X_train.shape[2]
-        # img_width = X_train.shape[3]
-        # diff_height, diff_width = find_diff(img_height, img_width)
+        img_height = X_train.shape[2]
+        img_width = X_train.shape[3]
+        diff_height, diff_width = find_diff(img_height, img_width)
 
-        # X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        # X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
-        # print(X_train.shape, X_valid.shape)
+        X_train = np.pad(X_train, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        X_valid = np.pad(X_valid, ((0, 0), (0, 0), (0,diff_height), (0,diff_width)), mode='constant', constant_values=0)
+        print(X_train.shape, X_valid.shape)
         ######################### FOR CRNN #########################
             # X = torch.nn.functional.pad(X, (0, diff_width, 0, diff_height, 0, 0, 0, 0), mode='constant', value=0)
 
@@ -675,7 +675,7 @@ class DeepLearning:
 
         # instantiate model and move to GPU for training
         model = model.to(self.device) 
-        optimizer = torch.optim.SGD(model.parameters(),lr=0.001, weight_decay=0.001, momentum=0.8)
+        optimizer = torch.optim.SGD(model.parameters(),lr=0.01, weight_decay=0.001, momentum=0.8)
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         criterion = nn.CrossEntropyLoss()
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1, patience=5, verbose=True)
