@@ -63,11 +63,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
-            # waveform_homo, _ = librosa.load(self.path, sr=None)
+            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = int(self.path.split("-")[2])
 
@@ -203,11 +203,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
-            # waveform_homo, _ = librosa.load(self.path, sr=None)
+            # waveform, _ = librosa.load(self.path, duration=self.target_duration, sr=self.target_sample_rate)
+            waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            waveform_homo[:len(waveform)] = waveform
+            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            # waveform_homo[:len(waveform)] = waveform
 
             emotion = self.path.split("_")
 
@@ -361,7 +361,7 @@ class CremaD:
 
     def plot(self, title):
         if os.path.isfile(self.path):
-            waveform, emotion_idx = self.getWaveformSAVEE()
+            waveform, emotion_idx = self.getWaveformRavdess()
         else:
             return "Please select single file of audio"
         
@@ -383,6 +383,7 @@ class CremaD:
             plt.ylabel('Amplitude', fontsize=8)
             plt.yticks(fontsize=8)
             librosa.display.waveshow(waveform,sr=self.target_sample_rate,color='pink')
+            # plt.savefig(f'./SAVEE-Figure/KL-{emotion}-waveform.png')
         
         elif title == "Spectogram":
             plt.xlabel('Time (s)', fontsize=8)
@@ -399,6 +400,7 @@ class CremaD:
             librosa.display.specshow(spec_db, sr=self.target_sample_rate, x_axis='time', y_axis='log', cmap='plasma')
             cbar = plt.colorbar(format="%+2.f dB")
             cbar.ax.tick_params(labelsize=8)
+            # plt.savefig(f'./SAVEE-Figure/KL-{emotion}-spec.png')
         
         elif title == "MFCC":
             plt.xlabel('Frame', fontsize=8)
@@ -424,6 +426,7 @@ class CremaD:
             cbar = plt.colorbar(format="%+2.f dB")
             cbar.ax.tick_params(labelsize=8)
             plt.tight_layout()
+            # plt.savefig(f'./CREMA-D-MFCC-Figure/actor16-{emotion}-mfcc.png')
         
         return plt.show()
 
@@ -442,7 +445,7 @@ class CremaD:
 
     def play_audio(self):
         if os.path.isfile(self.path):
-            waveform, _ = self.getWaveformSAVEE()
+            waveform, _ = self.getWaveformRavdess()
         else:
             return "Please select single file of audio"
         
