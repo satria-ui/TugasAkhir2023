@@ -361,7 +361,7 @@ class CremaD:
 
     def plot(self, title):
         if os.path.isfile(self.path):
-            waveform, emotion_idx = self.getWaveformRavdess()
+            waveform, emotion_idx = self.getWaveformSAVEE()
         else:
             return "Please select single file of audio"
         
@@ -378,17 +378,15 @@ class CremaD:
         plt.title(emotion, size=9)
 
         if title == "Waveform":
-            plt.xlabel('Time (s)', fontsize=8)
             plt.xticks(fontsize=8)
-            plt.ylabel('Amplitude', fontsize=8)
             plt.yticks(fontsize=8)
             librosa.display.waveshow(waveform,sr=self.target_sample_rate,color='pink')
-            # plt.savefig(f'./SAVEE-Figure/KL-{emotion}-waveform.png')
+            plt.xlabel('Time (s)', fontsize=8)
+            plt.ylabel('Amplitude', fontsize=8)
+            # plt.savefig(fname=f'./KL-{emotion}-waveform.png', bbox_inches = 'tight')
         
         elif title == "Spectogram":
-            plt.xlabel('Time (s)', fontsize=8)
             plt.xticks(fontsize=8)
-            plt.ylabel('Frequency', fontsize=8)
             plt.yticks(fontsize=8)
 
             # spec = librosa.feature.melspectrogram(y=waveform, sr=self.target_sample_rate, n_mels=1025)
@@ -398,6 +396,8 @@ class CremaD:
             spec_db = librosa.amplitude_to_db(abs(stft))
             print(spec_db.shape)
             librosa.display.specshow(spec_db, sr=self.target_sample_rate, x_axis='time', y_axis='log', cmap='plasma')
+            plt.xlabel('Time (s)', fontsize=8)
+            plt.ylabel('Frequency', fontsize=8)
             cbar = plt.colorbar(format="%+2.f dB")
             cbar.ax.tick_params(labelsize=8)
             # plt.savefig(f'./SAVEE-Figure/KL-{emotion}-spec.png')
@@ -445,7 +445,7 @@ class CremaD:
 
     def play_audio(self):
         if os.path.isfile(self.path):
-            waveform, _ = self.getWaveformRavdess()
+            waveform, _ = self.getWaveformSAVEE()
         else:
             return "Please select single file of audio"
         
