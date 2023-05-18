@@ -63,11 +63,11 @@ class CremaD:
             return audio_waveforms, audio_emotion
         
         elif os.path.isfile(self.path):
-            # waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration)
-            waveform_homo, _ = librosa.load(self.path, sr=None)
+            waveform, _ = librosa.load(self.path, sr=self.target_sample_rate, duration=self.target_duration, offset=0.8)
+            # waveform_homo, _ = librosa.load(self.path, sr=None)
             # make sure waveform vectors are homogenous by defining explicitly
-            # waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
-            # waveform_homo[:len(waveform)] = waveform
+            waveform_homo = np.zeros((int(self.target_sample_rate*self.target_duration)))
+            waveform_homo[:len(waveform)] = waveform
 
             emotion = int(self.path.split("-")[2])
 
@@ -466,7 +466,7 @@ class CremaD:
         # return all features from list of waveforms
         return features
     
-    def create_readyToTrain_data(self, test_data, train_data):
+    def create_readyToTrain_data(self, test_data, train_data, dataset, model):
         self.path = test_data
         print(f"Path is now {self.path}")
         # waveforms_testing, emotions_testing = self.getWaveform()
@@ -549,10 +549,11 @@ class CremaD:
 
         # check shape of each set again
         print(f'\nShape of 4D feature array for input tensor: {X_train.shape} train, {X_valid.shape} validation, {X_test.shape} test')
-        joblib.dump(scaler, "./Scaler/CRNNScaler.joblib")
+        joblib.dump(scaler, f"./Scaler/{model}Scaler{dataset}.joblib")
+        print(f"saved scaler on ./Scaler/{model}Scaler{dataset}.joblib")
 
         #################### SAVE READY TO TRAIN DATA ####################
-        filename = "./Scaler/CREMA-D_ready_data.npy"
+        filename = f"./Scaler/{dataset}_ready_data.npy"
         with open(filename, 'wb') as f:
             np.save(f, X_train)
             np.save(f, X_valid)
