@@ -92,7 +92,7 @@ def TransformerCNN_prediction(input):
     scaler_path = './Scaler_UI/TransformerCNNScalerRAVDESS.joblib'
     ############################## LOAD MODEL ##############################
     ## instantiate empty model and populate with params from binary 
-    model = TransformerCNNNetwork().to("cuda")
+    model = TransformerCNNNetwork().to("cpu")
     optimizer = torch.optim.SGD(model.parameters(),lr=0.01, weight_decay=0.001, momentum=0.8)
     load_checkpoint(optimizer, model, model_path)
 
@@ -125,7 +125,7 @@ def TransformerCNN_prediction(input):
     print(f'Shape of 4D feature array for input tensor: {XTest.shape}')
 
     # ############################## MAKE PREDICTION ##############################
-    X_test_tensor = torch.tensor(XTest,device="cuda").float()
+    X_test_tensor = torch.tensor(XTest,device="cpu").float()
     output_prediction, output_softmax = make_prediction(model,X_test_tensor)
 
     output_dict = {}
@@ -192,7 +192,7 @@ def get_features(waveforms, features, sample_rate):
     return features
 
 def load_checkpoint( optimizer, model, filename):
-    checkpoint_dict = torch.load(filename)
+    checkpoint_dict = torch.load(filename, map_location=torch.device("cpu"))
     epoch = checkpoint_dict['epoch']
     model.load_state_dict(checkpoint_dict['model'])
     if optimizer is not None:
