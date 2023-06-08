@@ -32,7 +32,7 @@ class TransformerCNNNetwork(nn.Module):
             nn.ELU(), 
             nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(p=0.3),
+            nn.Dropout(p=0.3),  
             
             # 2nd 2D convolution layer identical to last except output dim, maxpool kernel
             nn.Conv2d(
