@@ -16,3 +16,7 @@ FINALISASI:
 - referensi rata kanan kiri
 - bikin conf matrix 2 angka dibelakang koma
 - nambahin angka di ppt model comparison
+
+
+- figure diapus, dataset diapus juga
+- loss and accuracy gausah, dataset ambil salah satu table juga diganti
