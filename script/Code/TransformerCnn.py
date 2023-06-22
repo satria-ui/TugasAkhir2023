@@ -102,7 +102,7 @@ class TransformerCNNNetwork(nn.Module):
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*7)*2)+40,
+                            in_features = ((64*1*2)*2)+40,
                             out_features = 6
                             ) 
         
@@ -140,5 +140,5 @@ class TransformerCNNNetwork(nn.Module):
 
 if __name__ == "__main__":
     cnn = TransformerCNNNetwork()
-    model = cnn.to("cuda")
-    summary(model, (1, 40, 495))
+    model = cnn.to("cpu")
+    summary(model, (1, 40, 80))
