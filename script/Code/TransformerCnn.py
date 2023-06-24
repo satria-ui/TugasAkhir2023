@@ -102,7 +102,7 @@ class TransformerCNNNetwork(nn.Module):
         
         ################# FINAL LINEAR BLOCK ####################
         self.fc1_linear = nn.Linear(
-                            in_features = ((64*1*2)*2)+40,
+                            in_features = ((64*1*7)*2)+40,
                             out_features = 6
                             ) 
         
